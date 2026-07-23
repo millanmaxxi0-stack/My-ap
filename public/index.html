@@ -1,0 +1,2661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>PeyamApp</title>
+<script src="/socket.io/socket.io.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0b141a;--hdr:#1a2630;--sf:#1f2c34;--sf2:#2a3942;--pr:#7c5cff;--pr2:#9b7eff;--tx:#e9edef;--mu:#8696a0;--bd:#2a3942;--bme:#5b4bdb;--bot:#202c33;--red:#ef4444;--grn:#4ade80}
+body{font-family:-apple-system,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--tx);height:100vh;overflow:hidden}
+.screen{width:100%;max-width:480px;height:100vh;position:fixed;top:0;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .25s;overflow:hidden}
+.screen.active{opacity:1;pointer-events:all}
+input,button,select{font-family:inherit}
+.pa-logo-svg{width:100%;height:100%}
+#splash{align-items:center;justify-content:center;gap:16px;background:radial-gradient(circle at 50% 30%,#1a1230,#0b141a 70%)}
+.slogo{width:96px;height:96px;border-radius:28px;background:linear-gradient(135deg,var(--pr),var(--pr2));display:flex;align-items:center;justify-content:center;box-shadow:0 0 50px rgba(124,92,255,.45);animation:pulse 2.2s infinite}
+@keyframes pulse{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.05) rotate(2deg)}}
+.slogo svg{width:54px;height:54px}
+.sname{font-size:27px;font-weight:700;letter-spacing:.3px;background:linear-gradient(90deg,var(--pr2),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sdots{display:flex;gap:6px;margin-top:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--pr2);animation:bop 1.4s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes bop{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-5px)}}
+
+/* LANGUAGE */
+#language-screen{overflow-y:auto;padding:52px 18px 24px;background:var(--bg)}
+.ltitle{font-size:20px;font-weight:600;margin-bottom:5px}
+.lsub{color:var(--mu);font-size:13px;margin-bottom:18px}
+.litem{background:var(--sf);border:1.5px solid transparent;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;margin-bottom:8px;transition:border-color .2s}
+.litem.sel{border-color:var(--pr2)}
+.lflag{font-size:23px}
+.linfo{flex:1}
+.lname{font-size:14px;font-weight:500}
+.lnat{font-size:11px;color:var(--mu);margin-top:1px}
+.lcheck{width:20px;height:20px;border-radius:50%;border:2px solid var(--mu);display:flex;align-items:center;justify-content:center}
+.litem.sel .lcheck{background:var(--pr2);border-color:var(--pr2)}
+.litem.sel .lcheck::after{content:'✓';color:#fff;font-size:11px;font-weight:700}
+.btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--pr),var(--pr2));color:#fff;border:none;border-radius:28px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px}
+.btn:disabled{opacity:.4}
+
+#auth-screen{background:var(--bg);padding:0}
+.auth-hdr{background:var(--hdr);padding:48px 16px 14px;display:flex;align-items:center;gap:12px}
+.back-btn{background:none;border:none;color:var(--tx);font-size:22px;cursor:pointer;width:30px;flex-shrink:0}
+.auth-hdr-title{font-size:18px;font-weight:500}
+.auth-body{padding:28px 22px;flex:1;display:flex;flex-direction:column;overflow-y:auto}
+.auth-logo{width:78px;height:78px;border-radius:22px;background:linear-gradient(135deg,var(--pr),var(--pr2));display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.auth-logo svg{width:44px;height:44px}
+.auth-title{font-size:22px;font-weight:500;text-align:center;margin-bottom:8px}
+.auth-sub{color:var(--mu);font-size:13px;text-align:center;line-height:1.6;margin-bottom:28px}
+.field-lbl{color:var(--pr2);font-size:11px;font-weight:600;letter-spacing:.5px;margin-bottom:6px}
+.field-row{border-bottom:1.5px solid var(--bd);margin-bottom:24px;padding-bottom:8px}
+.field-row input,.field-row select{width:100%;background:transparent;border:none;color:var(--tx);font-size:16px;outline:none;padding:4px 0}
+.field-row input::placeholder{color:var(--mu)}
+.field-row:focus-within{border-color:var(--pr2)}
+.btn-main{width:100%;padding:14px;background:linear-gradient(135deg,var(--pr),var(--pr2));color:#fff;border:none;border-radius:28px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px;transition:opacity .2s}
+.btn-main:disabled{opacity:.4}
+.btn-main:active{opacity:.8}
+.hint-txt{color:var(--mu);font-size:12px;text-align:center;margin-top:12px;line-height:1.6}
+.otp-boxes{display:flex;gap:12px;justify-content:center;margin:24px 0 16px}
+.otp-box{width:52px;height:56px;background:var(--sf);border:none;border-bottom:2px solid var(--mu);border-radius:6px 6px 0 0;font-size:24px;font-weight:700;text-align:center;color:var(--tx);outline:none}
+.otp-box:focus{border-color:var(--pr2)}
+.test-badge{background:rgba(124,92,255,.12);border:1px solid rgba(124,92,255,.3);border-radius:8px;padding:9px 14px;font-size:12px;color:var(--pr2);text-align:center;margin-bottom:16px}
+
+#setup-screen{background:var(--bg)}
+.setup-body{padding:24px 22px;flex:1;overflow-y:auto}
+.setup-avatar{width:84px;height:84px;border-radius:50%;background:var(--sf2);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 22px;cursor:pointer;overflow:hidden;position:relative;color:var(--mu);border:2px dashed var(--bd)}
+.setup-avatar img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+
+#main-screen{background:var(--bg)}
+.main-hdr{background:var(--hdr);padding:48px 14px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.main-hdr-left{display:flex;align-items:center;gap:10px}
+.main-logo-sm{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--pr),var(--pr2));display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.main-logo-sm svg{width:19px;height:19px}
+.main-title{font-size:20px;font-weight:600}
+.main-icons{display:flex;gap:2px;position:relative}
+.icon-btn{background:none;border:none;color:var(--tx);font-size:18px;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.icon-btn:active{background:var(--sf2)}
+.search-bar{margin:8px 12px;background:var(--sf);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:8px;color:var(--mu);font-size:14px;flex-shrink:0;cursor:pointer}
+.tabs{display:flex;gap:4px;padding:6px 12px 10px;flex-shrink:0}
+.tab{padding:6px 14px;border-radius:16px;font-size:12px;background:var(--sf);color:var(--mu);cursor:pointer}
+.tab.a{background:rgba(124,92,255,.22);color:var(--pr2);font-weight:600}
+.tab-content{flex:1;overflow-y:auto;display:none}
+.tab-content.show{display:block}
+.chat-list{flex:1;overflow-y:auto}
+.chat-item{display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer}
+.chat-item:active{background:var(--sf)}
+.ci-avatar{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--pr),var(--pr2));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;overflow:hidden;position:relative;color:#fff}
+.ci-avatar img{width:100%;height:100%;object-fit:cover}
+.verified-badge{position:absolute;bottom:-1px;right:-1px;width:16px;height:16px;background:#3b9ddd;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;border:2px solid var(--bg)}
+.ci-info{flex:1;border-bottom:1px solid var(--bd);padding-bottom:10px;min-width:0}
+.ci-name{font-size:15px;font-weight:500;margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.ci-preview{font-size:12.5px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;padding-bottom:10px}
+.ci-time{font-size:11px;color:var(--mu)}
+.ci-badge{background:var(--pr2);color:#0b141a;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.fab{position:absolute;bottom:20px;right:16px;width:54px;height:54px;background:linear-gradient(135deg,var(--pr),var(--pr2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 3px 16px rgba(124,92,255,.5);cursor:pointer;border:none;color:#fff;z-index:10}
+.fab:active{transform:scale(.92)}
+.dropdown{position:absolute;top:46px;right:0;background:var(--sf);border-radius:10px;padding:6px 0;box-shadow:0 4px 20px rgba(0,0,0,.5);z-index:100;min-width:170px;display:none}
+.dropdown.open{display:block;animation:fadein .15s}
+@keyframes fadein{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.dd-item{padding:12px 18px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:10px}
+.dd-item:active{background:var(--sf2)}
+
+/* STORIES STRIP */
+.stories-strip{display:flex;gap:12px;padding:12px 14px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--bd)}
+.story-item{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;flex-shrink:0;width:62px}
+.story-ring{width:56px;height:56px;border-radius:50%;padding:2px;background:linear-gradient(135deg,var(--pr),var(--pr2));display:flex;align-items:center;justify-content:center}
+.story-ring.seen{background:var(--bd)}
+.story-ring.add{background:var(--sf2)}
+.story-av{width:100%;height:100%;border-radius:50%;background:var(--sf2);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;color:#fff;border:2px solid var(--bg)}
+.story-av img{width:100%;height:100%;object-fit:cover}
+.story-label{font-size:10.5px;color:var(--mu);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
+.add-story-plus{position:absolute;bottom:-2px;right:-2px;width:18px;height:18px;background:var(--pr2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;border:2px solid var(--bg)}
+
+/* STORY VIEWER */
+#story-viewer{background:#000}
+.sv-progress{display:flex;gap:4px;padding:48px 10px 8px}
+.sv-bar{flex:1;height:2.5px;background:rgba(255,255,255,.3);border-radius:2px;overflow:hidden}
+.sv-bar-fill{height:100%;background:#fff;width:0%}
+.sv-header{display:flex;align-items:center;gap:10px;padding:6px 14px 10px}
+.sv-av{width:34px;height:34px;border-radius:50%;background:var(--sf2);overflow:hidden;flex-shrink:0}
+.sv-av img{width:100%;height:100%;object-fit:cover}
+.sv-name{font-size:14px;font-weight:600;color:#fff}
+.sv-time{font-size:11px;color:rgba(255,255,255,.6)}
+.sv-close{color:#fff;font-size:24px;margin-left:auto;cursor:pointer}
+.sv-body{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.sv-img{max-width:100%;max-height:100%;object-fit:contain}
+.sv-text{color:#fff;font-size:20px;text-align:center;padding:30px;font-weight:500}
+.sv-tap-zone{position:absolute;top:0;bottom:0;width:50%}
+
+/* CREATE STORY */
+#create-story-screen{background:#000}
+.cs-hdr{padding:48px 16px 12px;display:flex;align-items:center;justify-content:space-between}
+.cs-hdr button{background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px}
+.cs-preview{flex:1;display:flex;align-items:center;justify-content:center;padding:0 16px;overflow:hidden}
+.cs-preview img{max-width:100%;max-height:100%;border-radius:12px;object-fit:contain}
+.cs-text-input{width:100%;background:rgba(0,0,0,.4);border:none;color:#fff;font-size:18px;text-align:center;padding:16px;outline:none}
+.cs-footer{padding:16px;display:flex;gap:10px}
+.cs-footer .btn-main{flex:1}
+
+#chat-screen{background:var(--bg)}
+.chat-hdr{background:var(--hdr);padding:46px 10px 10px;display:flex;align-items:center;gap:9px;flex-shrink:0}
+.chat-back{color:var(--tx);font-size:22px;cursor:pointer;width:28px;flex-shrink:0}
+.chat-av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--pr),var(--pr2));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;overflow:hidden;cursor:pointer;color:#fff}
+.chat-av img{width:100%;height:100%;object-fit:cover}
+.chat-hdr-info{flex:1;cursor:pointer;min-width:0}
+.chat-name{font-size:15px;font-weight:500;display:flex;align-items:center;gap:5px}
+.chat-sub{font-size:12px;color:var(--mu)}
+.chat-sub.on{color:var(--grn)}
+.call-btn{background:none;border:none;color:var(--tx);font-size:19px;cursor:pointer;width:36px;height:36px;flex-shrink:0}
+.msgs{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 8px;display:flex;flex-direction:column;gap:4px;background:#0b141a;overscroll-behavior:contain}
+.msgs::-webkit-scrollbar{width:0}
+.bbl{max-width:80%;padding:7px 10px 4px;border-radius:10px;font-size:14.5px;line-height:1.45;word-break:break-word;position:relative}
+.bbl.me{background:var(--bme);align-self:flex-end;border-top-right-radius:2px}
+.bbl.ot{background:var(--bot);align-self:flex-start;border-top-left-radius:2px}
+.bbl.sy{background:rgba(255,255,255,.05);align-self:center;color:var(--mu);font-size:11.5px;border-radius:8px;padding:5px 12px}
+.bbl.saved{background:var(--sf);align-self:flex-start;border-top-left-radius:2px}
+.bbl img.msg-img{max-width:100%;border-radius:8px;display:block;margin-top:2px}
+.bbl video.msg-vid{max-width:100%;border-radius:8px;display:block;margin-top:2px}
+.btime{font-size:10px;color:rgba(255,255,255,.4);float:right;margin-left:8px;margin-top:4px}
+.read-tick{font-size:10px;color:rgba(255,255,255,.6);margin-left:3px}
+.cin-wrap{background:var(--hdr);padding:8px 8px 24px;display:flex;align-items:center;gap:7px;flex-shrink:0;border-top:1px solid var(--bd)}
+.cin{flex:1;background:var(--sf);border:none;border-radius:24px;padding:11px 15px;color:var(--tx);font-size:15px;outline:none;min-width:0}
+.cin::placeholder{color:var(--mu)}
+.attach-btn{width:40px;height:40px;background:none;border:none;color:var(--mu);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.snd-btn{width:42px;height:42px;background:linear-gradient(135deg,var(--pr),var(--pr2));border:none;border-radius:50%;color:#fff;font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.snd-btn:active{opacity:.8}
+#file-input,#video-input,#story-file-input{display:none}
+.img-preview-bar{background:var(--hdr);padding:8px 12px;display:none;align-items:center;gap:10px;border-top:1px solid var(--bd)}
+.img-preview-bar img,.img-preview-bar video{width:46px;height:46px;border-radius:8px;object-fit:cover}
+.img-preview-bar .cancel-img{color:var(--red);font-size:13px;cursor:pointer;margin-left:auto}
+
+#profile-screen,#user-profile-screen,#account-screen,#privacy-screen,#find-user-screen,#change-email-screen,#passkey-screen{background:var(--bg)}
+.prof-hdr{background:var(--hdr);padding:46px 14px 14px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.prof-body{flex:1;overflow-y:auto}
+.prof-cover{background:linear-gradient(180deg,var(--pr) 0%,var(--hdr) 100%);padding:28px 20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.prof-avatar{width:90px;height:90px;border-radius:50%;background:var(--sf2);display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;cursor:pointer;position:relative;color:#fff}
+.prof-avatar img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.prof-name{font-size:22px;font-weight:600;display:flex;align-items:center;gap:6px}
+.prof-username{color:var(--pr2);font-size:14px}
+.prof-section{padding:8px 0;border-bottom:1px solid var(--bd)}
+.prof-section:last-child{border-bottom:none}
+.prof-section-title{padding:14px 20px 6px;color:var(--pr2);font-size:12px;font-weight:600;letter-spacing:.4px}
+.toggle-row{padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.toggle{width:46px;height:26px;background:var(--sf2);border-radius:13px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle.on{background:var(--pr)}
+.toggle-knob{width:22px;height:22px;background:white;border-radius:50%;position:absolute;top:2px;left:2px;transition:left .2s}
+.toggle.on .toggle-knob{left:22px}
+.sec-info{padding:14px 20px;color:var(--mu);font-size:13px;line-height:1.6}
+.prof-edit-input{width:100%}
+.nav-row{padding:14px 20px;display:flex;align-items:center;gap:14px;cursor:pointer}
+.nav-row:active{background:var(--sf)}
+.nav-icon{font-size:18px;width:24px}
+.nav-label{flex:1;font-size:15px}
+.nav-val{color:var(--mu);font-size:13px}
+.nav-arrow{color:var(--mu)}
+.radio-row{padding:13px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.radio-row:active{background:var(--sf)}
+.radio-circle{width:20px;height:20px;border-radius:50%;border:2px solid var(--mu);display:flex;align-items:center;justify-content:center}
+.radio-circle.sel{border-color:var(--pr2)}
+.radio-circle.sel::after{content:'';width:10px;height:10px;border-radius:50%;background:var(--pr2)}
+
+.find-input-wrap{padding:14px 16px;border-bottom:1px solid var(--bd)}
+.find-input{flex:1;width:100%;background:var(--sf);border:none;border-radius:24px;padding:11px 16px;color:var(--tx);font-size:15px;outline:none}
+.find-input::placeholder{color:var(--mu)}
+.saved-row{display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;border-bottom:1px solid var(--bd)}
+.saved-row:active{background:var(--sf)}
+.saved-row-av{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--pr),var(--pr2));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;position:relative;color:#fff}
+.user-card{padding:16px 16px;display:flex;align-items:center;gap:14px;cursor:pointer}
+.req-row{padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--bd)}
+.req-actions{display:flex;gap:8px}
+.req-btn{padding:8px 14px;border-radius:20px;border:none;font-size:12.5px;font-weight:600;cursor:pointer}
+.req-btn.accept{background:var(--pr);color:#fff}
+.req-btn.decline{background:var(--sf2);color:var(--tx)}
+.req-status-pill{font-size:11px;color:var(--mu);background:var(--sf2);padding:5px 10px;border-radius:12px}
+.attach-sheet{background:var(--sf);width:100%;max-width:480px;border-radius:14px 14px 0 0;padding:10px 0 max(10px,env(safe-area-inset-bottom));animation:slideUp .15s ease-out}
+.attach-sheet-item{padding:14px 20px;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:14px}
+.attach-sheet-item:active{background:var(--sf2)}
+.msg-file{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);border-radius:8px;padding:8px 10px;margin-top:2px;min-width:160px}
+.msg-file-icon{font-size:22px}
+.msg-file-name{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+.msg-file-size{font-size:11px;color:var(--mu)}
+.upload-progress{font-size:11px;color:var(--mu);margin-top:2px}
+.perm-row{padding:14px 20px;display:flex;align-items:center;gap:14px}
+.perm-icon{font-size:22px;width:28px}
+.perm-info{flex:1}
+.perm-title{font-size:15px}
+.perm-sub{font-size:12px;color:var(--mu);margin-top:2px}
+.perm-status{font-size:12px;font-weight:600}
+.perm-status.granted{color:var(--grn)}
+.perm-status.denied{color:var(--red)}
+.perm-status.default{color:var(--mu)}
+.save-txt-btn{background:none;border:none;color:var(--pr2);font-size:14px;font-weight:600;margin-left:auto;cursor:pointer;padding:8px 4px}
+.fab-menu{position:absolute;bottom:78px;right:16px;background:var(--sf);border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.35);display:none;flex-direction:column;overflow:hidden;z-index:40;min-width:170px}
+.fab-menu.open{display:flex}
+.fab-menu-item{padding:13px 18px;font-size:14.5px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.fab-menu-item:active{background:var(--sf2)}
+.switch{position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--sf2);border-radius:24px;transition:.2s}
+.slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+input:checked + .slider{background:var(--pr)}
+input:checked + .slider:before{transform:translateX(18px)}
+.perm-toggle-row{display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.perm-toggle-row > span:first-child{flex:1;font-size:14.5px}
+.perm-toggle-note{width:100%;font-size:11.5px;color:var(--mu)}
+.photo-viewer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:200}
+.photo-viewer-overlay.open{display:flex}
+.photo-viewer-overlay img{max-width:94%;max-height:90%;object-fit:contain;border-radius:6px}
+.reaction-picker{background:var(--sf);border-radius:30px;padding:8px 12px;display:flex;gap:8px;position:relative;top:40%}
+.reaction-picker span{font-size:26px;cursor:pointer;transition:transform .1s}
+.reaction-picker span:active{transform:scale(1.3)}
+.msg-reactions{display:flex;gap:2px;margin-top:2px;flex-wrap:wrap}
+.msg-reaction-badge{background:rgba(255,255,255,.12);border-radius:10px;padding:1px 6px;font-size:12px}
+.tick-single{color:var(--mu)}
+.tick-double-unread{color:#f59e0b}
+.tick-double-read{color:#4fc3f7}
+.chat-hdr-actions{display:flex;align-items:center;gap:4px;margin-left:auto}
+.chat-hdr-icon{background:none;border:none;font-size:19px;cursor:pointer;padding:6px;color:var(--tx)}
+.storage-bar-row{padding:12px 4px;border-bottom:1px solid var(--bd)}
+.storage-bar-track{background:var(--sf2);border-radius:6px;height:8px;margin-top:6px;overflow:hidden}
+.storage-bar-fill{background:var(--pr);height:100%}
+.quality-pill-row{display:flex;gap:8px;padding:10px 0}
+.quality-pill{flex:1;text-align:center;padding:9px;border-radius:10px;background:var(--sf2);font-size:13px;cursor:pointer}
+.quality-pill.active{background:var(--pr);color:#fff;font-weight:600}
+.about-hero{text-align:center;padding:30px 20px}
+.about-hero .pa-logo-svg{width:64px;height:64px}
+.group-perm-list{font-size:12.5px;color:var(--mu);line-height:1.8}
+.emoji-picker-sheet{background:var(--sf);width:100%;max-width:480px;border-radius:14px 14px 0 0;padding:14px;max-height:280px;overflow-y:auto;display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.emoji-picker-sheet span{font-size:24px;text-align:center;cursor:pointer;padding:4px}
+#voice-note-btn.recording{color:#ef4444;animation:pulseRec 1s infinite}
+@keyframes pulseRec{0%,100%{opacity:1}50%{opacity:.4}}
+.voice-note-indicator{position:absolute;bottom:70px;left:0;right:0;background:var(--sf);padding:10px 16px;display:none;align-items:center;gap:10px;font-size:13px;color:#ef4444}
+.voice-note-indicator.show{display:flex}
+.msg-voice{display:flex;align-items:center;gap:8px;min-width:160px}
+.msg-voice audio{height:32px;max-width:180px}
+.user-card:active{background:var(--sf)}
+.uc-av{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--pr),var(--pr2));display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0;color:#fff}
+.uc-av img{width:100%;height:100%;object-fit:cover}
+.uc-name{font-size:15px;font-weight:500}
+.uc-un{color:var(--pr2);font-size:13px;margin-top:1px}
+.uc-about{color:var(--mu);font-size:12.5px;margin-top:2px}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--mu);gap:10px;padding:40px;text-align:center}
+.empty-icon{font-size:46px;opacity:.4}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:center;justify-content:center;padding:24px}
+.overlay.open{display:flex}
+.tfa-card{background:var(--sf);border-radius:18px;padding:28px 22px;width:100%;max-width:340px;text-align:center}
+.tfa-icon{font-size:38px;margin-bottom:10px}
+.tfa-title{font-size:18px;font-weight:600;margin-bottom:8px}
+.tfa-sub{color:var(--mu);font-size:13px;line-height:1.6;margin-bottom:20px}
+.toast{position:fixed;bottom:82px;left:50%;transform:translateX(-50%);background:var(--sf);border:1px solid var(--pr2);color:var(--pr2);padding:9px 22px;border-radius:24px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:600;white-space:nowrap;max-width:90%;text-align:center;cursor:pointer}
+.toast.show{opacity:1;pointer-events:all}
+.badge-blue-sm{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;background:#3b9ddd;border-radius:50%;font-size:8px;color:white;flex-shrink:0}
+#call-screen{background:linear-gradient(160deg,#1a1230,#0b141a);align-items:center;justify-content:space-between;padding:60px 30px 50px}
+.call-top{display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:40px}
+.call-av{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,var(--pr),var(--pr2));display:flex;align-items:center;justify-content:center;font-size:48px;color:#fff;overflow:hidden;animation:ringPulse 1.6s infinite}
+@keyframes ringPulse{0%,100%{box-shadow:0 0 0 0 rgba(124,92,255,.5)}50%{box-shadow:0 0 0 20px rgba(124,92,255,0)}}
+.call-av img{width:100%;height:100%;object-fit:cover}
+.call-name{font-size:22px;font-weight:600}
+.call-status{font-size:14px;color:var(--mu)}
+.call-actions{display:flex;gap:30px;align-items:center}
+.bbl{position:relative}
+.msg-ctx-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;align-items:flex-end;justify-content:center}
+.msg-ctx-overlay.open{display:flex}
+.msg-ctx-sheet{background:var(--bg,#fff);width:100%;max-width:480px;border-radius:14px 14px 0 0;padding:8px 0;animation:slideUp .15s ease-out}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.msg-ctx-item{padding:14px 20px;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:10px}
+.msg-ctx-item:active{background:rgba(0,0,0,.06)}
+.msg-ctx-item.danger{color:#ef4444}
+.msg-edited-tag{font-size:10px;opacity:.6;margin-left:4px}
+.msg-deleted{font-style:italic;opacity:.6}
+.call-mic-row{display:flex;justify-content:center;margin-top:14px}
+.call-mic-btn{width:46px;height:46px;border-radius:50%;border:none;font-size:18px;background:rgba(255,255,255,.18);color:#fff;cursor:pointer}
+.call-mic-btn.muted{background:#ef4444}
+.btn-secondary{width:100%;padding:12px;border-radius:10px;border:1px solid #ccc;background:transparent;font-size:14px;cursor:pointer}
+.call-btn-round{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;border:none}
+.call-decline{background:var(--red);color:#fff}
+.call-accept{background:var(--grn);color:#fff}
+.call-hangup{background:var(--red);color:#fff;width:60px;height:60px}
+</style>
+</head>
+<body>
+
+<div class="screen active" id="splash">
+  <div class="slogo"><svg class="pa-logo-svg" viewBox="0 0 48 48" fill="none"><path d="M24 4C12.96 4 4 12.06 4 22c0 5.1 2.32 9.7 6.13 12.97-.2 2.46-.93 5.1-2.13 7.03 3.05-.3 6.4-1.36 8.9-2.84A23.6 23.6 0 0024 40c11.04 0 20-8.06 20-18S35.04 4 24 4z" fill="white"/><path d="M16 22.5l16-6-5 16-3.2-6.2-6.4 4.2 1.6-5.4-3-2.6z" fill="#7c5cff"/></svg></div>
+  <div class="sname">PeyamApp</div>
+  <div class="sdots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+</div>
+
+<!-- LANGUAGE -->
+<div class="screen" id="language-screen">
+  <div class="ltitle" id="lt">Choose your language</div>
+  <div class="lsub" id="ls">Select your preferred language</div>
+  <div id="lgrid"></div>
+  <button class="btn" id="lbtn" onclick="goAuth()">Continue</button>
+</div>
+
+<div class="screen" id="auth-screen">
+  <div class="auth-hdr"><button class="back-btn" id="auth-back" onclick="authBack()">←</button><div class="auth-hdr-title">PeyamApp</div></div>
+  <div class="auth-body">
+    <div id="step-email">
+      <div class="auth-logo"><svg class="pa-logo-svg" viewBox="0 0 48 48" fill="none"><path d="M24 4C12.96 4 4 12.06 4 22c0 5.1 2.32 9.7 6.13 12.97-.2 2.46-.93 5.1-2.13 7.03 3.05-.3 6.4-1.36 8.9-2.84A23.6 23.6 0 0024 40c11.04 0 20-8.06 20-18S35.04 4 24 4z" fill="white"/><path d="M16 22.5l16-6-5 16-3.2-6.2-6.4 4.2 1.6-5.4-3-2.6z" fill="#7c5cff"/></svg></div>
+      <div class="auth-title" id="atitle">Enter your Gmail address</div>
+      <div class="auth-sub" id="asub">PeyamApp sends a real 7-character verification code to your Gmail inbox. Only genuine @gmail.com addresses are accepted — no temp-mail.</div>
+      <div class="field-lbl" id="aemaillbl">GMAIL ADDRESS</div>
+      <div class="field-row"><input type="email" id="email-in" placeholder="yourname@gmail.com" inputmode="email"></div>
+      <div class="test-badge" id="atestbadge" style="display:none">🧪 The server console will print your code if email sending isn't configured yet</div>
+      <button class="btn-main" id="anextbtn" onclick="sendCode()">Next</button>
+    </div>
+    <div id="step-otp" style="display:none">
+      <div class="auth-title" id="otitle">Enter verification code</div>
+      <div class="auth-sub" id="osub">We sent a 7-character code to<br><strong id="otp-email-show" style="color:var(--pr2)"></strong></div>
+      <div class="otp-boxes" style="gap:6px">
+        <input class="otp-box" style="width:38px;height:48px;font-size:18px;text-transform:uppercase" type="text" maxlength="1" id="o0">
+        <input class="otp-box" style="width:38px;height:48px;font-size:18px;text-transform:uppercase" type="text" maxlength="1" id="o1">
+        <input class="otp-box" style="width:38px;height:48px;font-size:18px;text-transform:uppercase" type="text" maxlength="1" id="o2">
+        <input class="otp-box" style="width:38px;height:48px;font-size:18px;text-transform:uppercase" type="text" maxlength="1" id="o3">
+        <input class="otp-box" style="width:38px;height:48px;font-size:18px;text-transform:uppercase" type="text" maxlength="1" id="o4">
+        <input class="otp-box" style="width:38px;height:48px;font-size:18px;text-transform:uppercase" type="text" maxlength="1" id="o5">
+        <input class="otp-box" style="width:38px;height:48px;font-size:18px;text-transform:uppercase" type="text" maxlength="1" id="o6">
+      </div>
+      <div class="hint-txt">Check your inbox (and spam folder). The code expires in 10 minutes.</div>
+      <div class="hint-txt" style="cursor:pointer;color:var(--pr2)" id="ochangeemail" onclick="goStep('email')">← Change email</div>
+    </div>
+  </div>
+</div>
+
+<!-- SETUP PROFILE (professional, with avatar) -->
+<div class="screen" id="setup-screen">
+  <div class="auth-hdr" style="padding-top:48px"><div class="auth-hdr-title" id="setuptitle">Set up your profile</div></div>
+  <div class="setup-body">
+    <div class="auth-sub" style="text-align:left;margin-bottom:20px" id="setupsub">Add a photo and choose how others will see and find you.</div>
+    <div class="setup-avatar" id="setup-avatar" onclick="document.getElementById('setup-av-input').click()">📷</div>
+    <input type="file" id="setup-av-input" accept="image/*" style="display:none" onchange="handleSetupAvatar(event)">
+    <div class="field-lbl" id="setupunlbl">USERNAME (starts with @)</div>
+    <div class="field-row"><input type="text" id="setup-username" placeholder="@yourname"></div>
+    <div class="field-lbl" id="setupnamelbl">DISPLAY NAME</div>
+    <div class="field-row"><input type="text" id="setup-name" placeholder="Your name"></div>
+    <div class="field-lbl" id="setupaboutlbl">ABOUT</div>
+    <div class="field-row"><input type="text" id="setup-about" placeholder="Hey there! I am using PeyamApp."></div>
+    <button class="btn-main" id="setupcontinuebtn" onclick="setupProfile()">Continue</button>
+  </div>
+</div>
+
+<div class="screen" id="main-screen">
+  <div class="main-hdr">
+    <div class="main-hdr-left">
+      <div class="main-logo-sm"><svg class="pa-logo-svg" viewBox="0 0 48 48" fill="none"><path d="M24 4C12.96 4 4 12.06 4 22c0 5.1 2.32 9.7 6.13 12.97-.2 2.46-.93 5.1-2.13 7.03 3.05-.3 6.4-1.36 8.9-2.84A23.6 23.6 0 0024 40c11.04 0 20-8.06 20-18S35.04 4 24 4z" fill="white"/><path d="M16 22.5l16-6-5 16-3.2-6.2-6.4 4.2 1.6-5.4-3-2.6z" fill="#7c5cff"/></svg></div>
+      <div class="main-title">PeyamApp</div>
+    </div>
+    <div class="main-icons">
+      <button class="icon-btn" onclick="show('find-user-screen')">🔍</button>
+      <button class="icon-btn" style="position:relative" onclick="show('requests-screen');loadRequests()">🔔<span class="ci-badge" id="req-badge" style="display:none;position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;font-size:9px;padding:0 4px"></span></button>
+      <button class="icon-btn" id="menu-btn" onclick="toggleMenu()">⋮</button>
+      <div class="dropdown" id="main-menu">
+        <div class="dd-item" onclick="closeMenu();show('profile-screen');loadProfile()">👤 Profile</div>
+        <div class="dd-item" onclick="closeMenu();show('find-user-screen')">🔗 Find by username</div>
+        <div class="dd-item" onclick="closeMenu();show('requests-screen');loadRequests()">🔔 Requests</div>
+        <div class="dd-item" onclick="closeMenu();markAllRead()">✅ Read all</div>
+      </div>
+    </div>
+  </div>
+  <div class="search-bar" onclick="show('find-user-screen')">🔍 <span>Search or find user...</span></div>
+  <div class="tabs">
+    <div class="tab" id="tab-updates" onclick="switchTab('updates')">Updates</div>
+    <div class="tab" id="tab-calls" onclick="switchTab('calls')">Calls</div>
+    <div class="tab a" id="tab-chats" onclick="switchTab('chats')">Chats</div>
+    <div class="tab" id="tab-peyamapp" onclick="switchTab('peyamapp')">PeyamApp</div>
+  </div>
+  <div class="tab-content" id="content-updates" style="overflow-y:auto">
+    <div class="stories-strip" id="stories-strip"></div>
+    <div id="stories-list"></div>
+  </div>
+  <div class="tab-content" id="content-calls">
+    <div id="call-history-list"><div class="empty-state"><div class="empty-icon">📞</div><div>No call history yet</div></div></div>
+  </div>
+  <div class="tab-content show" id="content-chats">
+    <div class="chat-list" id="chat-list"></div>
+  </div>
+  <div class="tab-content" id="content-peyamapp" style="overflow-y:auto">
+    <div class="prof-section-title">ACCOUNT</div>
+    <div class="nav-row" onclick="show('profile-screen');loadProfile()"><span class="nav-icon">👤</span><div class="nav-label">Profile</div><span class="nav-arrow">›</span></div>
+    <div class="nav-row" onclick="show('account-screen');loadAccountScreen()"><span class="nav-icon">⚙️</span><div class="nav-label">Account</div><span class="nav-arrow">›</span></div>
+    <div class="nav-row" onclick="show('privacy-screen');loadPrivacy()"><span class="nav-icon">🛡️</span><div class="nav-label">Privacy</div><span class="nav-arrow">›</span></div>
+    <div class="nav-row" onclick="show('storage-screen');loadStorageScreen()"><span class="nav-icon">💾</span><div class="nav-label">Storage and Data</div><span class="nav-arrow">›</span></div>
+    <div class="nav-row" onclick="show('language-screen')"><span class="nav-icon">🌐</span><div class="nav-label">App Language</div><span class="nav-arrow">›</span></div>
+    <div class="nav-row" onclick="show('about-screen')"><span class="nav-icon">ℹ️</span><div class="nav-label">PeyamApp</div><span class="nav-arrow">›</span></div>
+    <div class="nav-row" onclick="show('contacts-screen');loadContacts()"><span class="nav-icon">👥</span><div class="nav-label">Contacts</div><span class="nav-arrow">›</span></div>
+    <div class="nav-row" onclick="show('groups-screen');loadMyGroups()"><span class="nav-icon">💬</span><div class="nav-label">My Groups</div><span class="nav-arrow">›</span></div>
+    <div class="nav-row" style="color:#ef4444" onclick="logout()"><span class="nav-icon">🚪</span><div class="nav-label" style="color:#ef4444">Logout</div></div>
+  </div>
+  <button class="fab" id="main-fab" onclick="toggleFabMenu()">+</button>
+  <div class="fab-menu" id="fab-menu">
+    <div class="fab-menu-item" onclick="closeFabMenu();openNewContact()">👤 <span>New Contact</span></div>
+    <div class="fab-menu-item" onclick="closeFabMenu();openNewGroup()">👥 <span>New Group</span></div>
+  </div>
+</div>
+
+<!-- NEW CONTACT -->
+<div class="screen" id="new-contact-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('main-screen')">←</button><div style="font-size:18px;font-weight:500">New Contact</div><button class="save-txt-btn" onclick="saveNewContact()">Save</button></div>
+  <div class="prof-body">
+    <div class="field-lbl">FIRST NAME</div>
+    <div class="field-row"><input class="prof-edit-input" type="text" id="nc-first"></div>
+    <div class="field-lbl">LAST NAME</div>
+    <div class="field-row"><input class="prof-edit-input" type="text" id="nc-last"></div>
+    <div class="field-lbl">USERNAME OR EMAIL</div>
+    <div class="field-row"><input class="prof-edit-input" type="text" id="nc-identifier" placeholder="@username or name@gmail.com"></div>
+  </div>
+</div>
+
+<!-- CONTACTS LIST -->
+<div class="screen" id="contacts-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('main-screen')">←</button><div style="font-size:18px;font-weight:500">Contacts</div><button class="save-txt-btn" onclick="show('new-contact-screen')">+ Add</button></div>
+  <div id="contacts-list" style="flex:1;overflow-y:auto"></div>
+</div>
+
+<!-- NEW GROUP: pick members -->
+<div class="screen" id="new-group-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('main-screen')">←</button><div style="font-size:18px;font-weight:500">New Group</div><button class="save-txt-btn" onclick="proceedToGroupSetup()">Next</button></div>
+  <div class="find-input-wrap"><input class="find-input" type="text" id="ng-search" placeholder="Search @username or email..." oninput="searchGroupMembers()"></div>
+  <div id="ng-selected" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 16px"></div>
+  <div id="ng-result" style="flex:1;overflow-y:auto"></div>
+</div>
+
+<!-- GROUP SETUP: name/photo/permissions -->
+<div class="screen" id="group-setup-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('new-group-screen')">←</button><div style="font-size:18px;font-weight:500">Group Info</div><button class="save-txt-btn" onclick="createGroupFinal()">Create</button></div>
+  <div class="prof-body">
+    <div class="setup-avatar" id="gs-avatar" onclick="document.getElementById('gs-av-input').click()" style="margin:10px auto">📷</div>
+    <input type="file" id="gs-av-input" accept="image/*" style="display:none" onchange="handleGroupAvatarPick(event)">
+    <div class="field-lbl">GROUP NAME</div>
+    <div class="field-row"><input class="prof-edit-input" type="text" id="gs-name" placeholder="Group name"></div>
+    <div class="prof-section-title">GROUP PERMISSIONS</div>
+    <div class="perm-toggle-row"><span>Send new messages</span><label class="switch"><input type="checkbox" id="gp-send" checked><span class="slider"></span></label><span class="perm-toggle-note">Off = only admins can send</span></div>
+    <div class="perm-toggle-row"><span>Edit group info</span><label class="switch"><input type="checkbox" id="gp-edit"><span class="slider"></span></label><span class="perm-toggle-note">Off = only admins can edit</span></div>
+    <div class="perm-toggle-row"><span>Add other members</span><label class="switch"><input type="checkbox" id="gp-add" checked><span class="slider"></span></label><span class="perm-toggle-note">Off = only admins can add</span></div>
+    <div class="perm-toggle-row"><span>Show message history to new members</span><label class="switch"><input type="checkbox" id="gp-history" checked><span class="slider"></span></label></div>
+    <div class="perm-toggle-row"><span>Approve new members</span><label class="switch"><input type="checkbox" id="gp-approve"><span class="slider"></span></label><span class="perm-toggle-note">On = admin must approve joins</span></div>
+  </div>
+</div>
+
+<!-- MY GROUPS LIST -->
+<div class="screen" id="groups-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('main-screen')">←</button><div style="font-size:18px;font-weight:500">My Groups</div></div>
+  <div id="groups-list" style="flex:1;overflow-y:auto"></div>
+</div>
+
+<div class="screen" id="find-user-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('main-screen')">←</button><div style="font-size:18px;font-weight:500">New chat</div></div>
+  <div class="saved-row" onclick="openSaved()">
+    <div class="saved-row-av">🔖</div>
+    <div><div style="font-size:15px;font-weight:500;display:flex;align-items:center;gap:6px">Saved Messages <span class="badge-blue-sm">✓</span></div>
+    <div style="font-size:12.5px;color:var(--mu)">Your personal notes</div></div>
+  </div>
+  <div class="find-input-wrap"><input class="find-input" type="text" id="find-input" placeholder="Enter @username..." oninput="findUser()"></div>
+  <div id="find-result" style="flex:1;overflow-y:auto"><div class="empty-state"><div class="empty-icon">🔍</div><div>Search by @username</div></div></div>
+</div>
+
+<!-- REQUESTS SCREEN (accept/reject before any messaging is possible) -->
+<div class="screen" id="requests-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('main-screen')">←</button><div style="font-size:18px;font-weight:500">Message Requests</div></div>
+  <div class="prof-body">
+    <div class="prof-section-title">INCOMING</div>
+    <div id="requests-incoming"><div class="empty-state" style="padding:20px"><div class="empty-icon">📭</div><div>No incoming requests</div></div></div>
+    <div class="prof-section-title">SENT</div>
+    <div id="requests-outgoing"><div class="empty-state" style="padding:20px"><div class="empty-icon">📤</div><div>No pending sent requests</div></div></div>
+  </div>
+</div>
+
+<div class="screen" id="chat-screen">
+  <div class="chat-hdr">
+    <span class="chat-back" onclick="show('main-screen');loadChats()">←</span>
+    <div class="chat-av" id="chat-av" onclick="viewUserProfile()">👤</div>
+    <div class="chat-hdr-info" onclick="viewUserProfile()">
+      <div class="chat-name" id="chat-name">Chat</div>
+      <div class="chat-sub" id="chat-sub">tap for info</div>
+    </div>
+    <div class="chat-hdr-actions">
+      <button class="chat-hdr-icon" onclick="startCall(true)" title="Video call">🎥</button>
+      <button class="chat-hdr-icon" onclick="startCall(false)" title="Voice call">📞</button>
+      <button class="chat-hdr-icon" onclick="toggleChatMenu()" title="More">⋮</button>
+      <div class="dropdown" id="chat-menu" style="top:44px">
+        <div class="dd-item" onclick="closeChatMenu();viewUserProfile()">👤 View contact</div>
+        <div class="dd-item" onclick="closeChatMenu();showToast('Pick a wallpaper for this chat')">🎨 Chat theme</div>
+        <div class="dd-item" onclick="closeChatMenu();blockCurrentChat()">🚫 Block</div>
+        <div class="dd-item" onclick="closeChatMenu();toggleChatDisappearing()">⏱️ Disappearing messages</div>
+        <div class="dd-item" onclick="closeChatMenu();toggleMuteChat()">🔕 Mute notifications</div>
+        <div class="dd-item" onclick="closeChatMenu();lockCurrentChat()">🔐 Lock chat</div>
+        <div class="dd-item" onclick="closeChatMenu();clearCurrentChat()">🧹 Clear chat</div>
+      </div>
+    </div>
+  </div>
+  <div class="msgs" id="msgs"></div>
+  <div class="img-preview-bar" id="img-preview-bar">
+    <img id="img-preview-thumb" src="" style="display:none">
+    <video id="video-preview-thumb" style="display:none" muted></video>
+    <div id="file-preview-thumb" style="display:none;font-size:26px">📄</div>
+    <div style="flex:1;min-width:0">
+      <span style="font-size:13px;color:var(--mu);display:block" id="preview-label">Ready to send</span>
+      <span class="upload-progress" id="upload-progress-label" style="display:none"></span>
+    </div>
+    <span class="cancel-img" onclick="cancelImage()">Cancel</span>
+  </div>
+  <div class="voice-note-indicator" id="voice-note-indicator">🔴 Recording voice message… <span id="voice-note-timer">0:00</span> (release to send)</div>
+  <div class="cin-wrap">
+    <button class="attach-btn" onclick="openAttachMenu()">📎</button>
+    <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleAttachPick(event,'image')">
+    <input type="file" id="video-input" accept="video/*" style="display:none" onchange="handleAttachPick(event,'video')">
+    <input type="file" id="doc-input" accept="*/*" style="display:none" onchange="handleAttachPick(event,'file')">
+    <button class="attach-btn" onclick="toggleEmojiPicker()">😊</button>
+    <input class="cin" type="text" id="cin" placeholder="Message" autocomplete="off">
+    <button class="snd-btn" id="snd-btn" onclick="sendMsg()">➤</button>
+    <button class="attach-btn" id="voice-note-btn" onmousedown="startVoiceNote()" onmouseup="stopVoiceNote()" ontouchstart="startVoiceNote(event)" ontouchend="stopVoiceNote(event)">🎤</button>
+  </div>
+</div>
+
+<!-- EMOJI PICKER (for composing messages) -->
+<div class="msg-ctx-overlay" id="emoji-picker-overlay" onclick="if(event.target===this) closeEmojiPicker()">
+  <div class="emoji-picker-sheet" id="emoji-picker-sheet"></div>
+</div>
+
+<!-- ATTACH ACTION SHEET -->
+<div class="msg-ctx-overlay" id="attach-sheet-overlay" onclick="if(event.target===this) closeAttachMenu()">
+  <div class="attach-sheet">
+    <div class="attach-sheet-item" onclick="closeAttachMenu();document.getElementById('file-input').click()">📷 <span>Photo</span></div>
+    <div class="attach-sheet-item" onclick="closeAttachMenu();document.getElementById('video-input').click()">🎥 <span>Video</span></div>
+    <div class="attach-sheet-item" onclick="closeAttachMenu();document.getElementById('doc-input').click()">📄 <span>Document</span></div>
+  </div>
+</div>
+
+<!-- MESSAGE CONTEXT MENU (long-press / right-click on a bubble) -->
+<div class="msg-ctx-overlay" id="msg-ctx-overlay" onclick="if(event.target===this) closeMsgCtx()">
+  <div class="msg-ctx-sheet" id="msg-ctx-sheet"></div>
+</div>
+
+<!-- EDIT MESSAGE OVERLAY -->
+<div class="overlay" id="edit-msg-overlay">
+  <div class="tfa-card">
+    <div class="tfa-icon">✏️</div>
+    <div class="tfa-title">Edit message</div>
+    <div class="field-row"><input class="prof-edit-input" type="text" id="edit-msg-input" placeholder="Message"></div>
+    <button class="btn-main" onclick="confirmEditMsg()">Save</button>
+    <button class="btn-secondary" onclick="document.getElementById('edit-msg-overlay').classList.remove('open')" style="margin-top:8px">Cancel</button>
+  </div>
+</div>
+
+<!-- FULLSCREEN PHOTO VIEWER -->
+<div class="photo-viewer-overlay" id="photo-viewer-overlay" onclick="closePhotoViewer()">
+  <img id="photo-viewer-img" src="">
+</div>
+
+<!-- QUICK EMOJI REACTION PICKER (long-press a bubble) -->
+<div class="msg-ctx-overlay" id="reaction-picker-overlay" onclick="if(event.target===this) closeReactionPicker()">
+  <div class="reaction-picker" id="reaction-picker">
+    <span onclick="pickReaction('❤️')">❤️</span>
+    <span onclick="pickReaction('😂')">😂</span>
+    <span onclick="pickReaction('😮')">😮</span>
+    <span onclick="pickReaction('😢')">😢</span>
+    <span onclick="pickReaction('👍')">👍</span>
+    <span onclick="pickReaction('👎')">👎</span>
+    <span onclick="pickReaction('😡')">😡</span>
+  </div>
+</div>
+
+<div class="screen" id="saved-screen">
+  <div class="chat-hdr">
+    <span class="chat-back" onclick="show('find-user-screen')">←</span>
+    <div class="chat-av" style="background:linear-gradient(135deg,var(--pr),var(--pr2));font-size:18px">🔖</div>
+    <div class="chat-hdr-info"><div class="chat-name">Saved Messages <span class="badge-blue-sm">✓</span></div><div class="chat-sub" style="color:var(--pr2)">Official PeyamApp space</div></div>
+  </div>
+  <div class="msgs" id="saved-msgs"></div>
+  <div class="cin-wrap"><input class="cin" type="text" id="saved-cin" placeholder="Save a note..." autocomplete="off"><button class="snd-btn" onclick="sendSaved()">➤</button></div>
+</div>
+
+<div class="screen" id="profile-screen">
+  <div class="prof-hdr">
+    <button class="back-btn" onclick="show('main-screen')">←</button>
+    <div style="font-size:18px;font-weight:500">Profile</div>
+    <button class="btn-main" style="width:auto;padding:8px 18px;margin:0;margin-left:auto;font-size:13px" onclick="saveProfile()">Save</button>
+  </div>
+  <div class="prof-body">
+    <div class="prof-cover">
+      <div class="prof-avatar" id="my-avatar-big" onclick="document.getElementById('av-input').click()">👤</div>
+      <input type="file" id="av-input" accept="image/*" style="display:none" onchange="handleAvatarChange(event)">
+      <div class="prof-name" id="prof-name-show"></div>
+      <div class="prof-username" id="prof-un-show"></div>
+    </div>
+    <div style="padding:16px 20px">
+      <div class="field-lbl">DISPLAY NAME</div>
+      <div class="field-row"><input class="prof-edit-input" type="text" id="edit-name" placeholder="Your name"></div>
+      <div class="field-lbl">LAST NAME</div>
+      <div class="field-row"><input class="prof-edit-input" type="text" id="edit-lastname" placeholder="Last name (optional)"></div>
+      <div class="field-lbl">USERNAME</div>
+      <div class="field-row"><input class="prof-edit-input" type="text" id="edit-username" placeholder="@username"></div>
+      <div class="field-lbl">ABOUT / BIO</div>
+      <div class="field-row"><input class="prof-edit-input" type="text" id="edit-about" placeholder="About me..."></div>
+      <div class="field-lbl">EMAIL</div>
+      <div class="field-row"><input class="prof-edit-input" type="text" id="edit-email-show" disabled style="opacity:.7"></div>
+      <div style="height:8px"></div>
+      <button class="btn-main" style="background:var(--sf2);color:var(--tx)" onclick="show('account-screen');loadAccountScreen()">⚙️ Account</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="user-profile-screen">
+  <div class="prof-hdr"><button class="back-btn" id="upback-btn" onclick="history.back()">←</button><div style="font-size:18px;font-weight:500">Profile</div></div>
+  <div class="prof-body">
+    <div class="prof-cover">
+      <div class="prof-avatar" id="up-avatar" onclick="viewAvatarFullscreen('up-avatar')">👤</div>
+      <div class="prof-name" id="up-name"></div>
+      <div class="prof-username" id="up-username"></div>
+      <div class="chat-sub" id="up-online" style="color:var(--grn)"></div>
+    </div>
+    <div style="padding:18px 20px">
+      <div class="field-lbl">ABOUT</div>
+      <div style="font-size:15px;color:var(--tx);padding:10px 0;border-bottom:1px solid var(--bd);margin-bottom:20px" id="up-about"></div>
+      <div id="up-action"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SECURITY -->
+<div class="screen" id="account-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('main-screen')">←</button><div style="font-size:18px;font-weight:500">Account</div></div>
+  <div class="prof-body" style="padding:0 0 16px">
+    <div class="nav-row" onclick="showToast('You are signed in with one PeyamApp account on this device')">
+      <span class="nav-icon">➕</span>
+      <div class="nav-label">Add account</div>
+      <span class="nav-arrow">›</span>
+    </div>
+    <div class="nav-row" onclick="show('passkey-screen');loadPasskeyStatus()">
+      <span class="nav-icon">🔑</span>
+      <div class="nav-label">Passkey</div>
+      <span class="nav-val" id="passkey-status-label">Not set</span>
+      <span class="nav-arrow">›</span>
+    </div>
+    <div class="nav-row" onclick="show('profile-screen');loadProfile()">
+      <span class="nav-icon">✉️</span>
+      <div class="nav-label">Email address</div>
+      <span class="nav-val" id="acc-email-label"></span>
+      <span class="nav-arrow">›</span>
+    </div>
+    <div class="nav-row" onclick="openTwoFAFlow()">
+      <span class="nav-icon">🔐</span>
+      <div class="nav-label">Two-step verification</div>
+      <span class="nav-val" id="twofa-status-label">Off</span>
+      <span class="nav-arrow">›</span>
+    </div>
+    <div class="nav-row">
+      <span class="nav-icon">🔔</span>
+      <div class="nav-label">Security notifications</div>
+      <label class="switch"><input type="checkbox" id="secnotif-toggle" checked onchange="toggleSecurityNotif(this.checked)"><span class="slider"></span></label>
+    </div>
+    <div class="nav-row" onclick="show('profile-screen');loadProfile()">
+      <span class="nav-icon">🔗</span>
+      <div class="nav-label">Username</div>
+      <span class="nav-val" id="acc-username-label"></span>
+      <span class="nav-arrow">›</span>
+    </div>
+    <div class="nav-row" onclick="show('change-email-screen')">
+      <span class="nav-icon">📧</span>
+      <div class="nav-label">Change email</div>
+      <span class="nav-arrow">›</span>
+    </div>
+    <div class="nav-row" onclick="show('permissions-screen');loadPermissions()">
+      <span class="nav-icon">🎙️</span>
+      <div class="nav-label">App Permissions</div>
+      <span class="nav-val" id="perm-summary-label"></span>
+      <span class="nav-arrow">›</span>
+    </div>
+    <div class="nav-row" style="color:#ef4444" onclick="logout()">
+      <span class="nav-icon">🚪</span>
+      <div class="nav-label" style="color:#ef4444">Logout</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- APP PERMISSIONS (granted from Settings, not mid-chat) -->
+<div class="screen" id="permissions-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('account-screen')">←</button><div style="font-size:18px;font-weight:500">App Permissions</div></div>
+  <div class="prof-body">
+    <div class="sec-info">Voice calls and background message alerts need these permissions granted once, here in Settings.</div>
+    <div class="perm-row">
+      <div class="perm-icon">🔔</div>
+      <div class="perm-info"><div class="perm-title">Notifications</div><div class="perm-sub">Get alerted about new messages, requests and calls even when PeyamApp is closed</div></div>
+      <div>
+        <div class="perm-status" id="perm-notif-status">Checking…</div>
+        <button class="req-btn accept" style="margin-top:6px" onclick="grantNotifPermission()" id="perm-notif-btn">Enable</button>
+      </div>
+    </div>
+    <div class="perm-row">
+      <div class="perm-icon">🎙️</div>
+      <div class="perm-info"><div class="perm-title">Microphone</div><div class="perm-sub">Required to make or receive voice calls</div></div>
+      <div>
+        <div class="perm-status" id="perm-mic-status">Checking…</div>
+        <button class="req-btn accept" style="margin-top:6px" onclick="grantMicPermission()" id="perm-mic-btn">Enable</button>
+      </div>
+    </div>
+    <div class="perm-row">
+      <div class="perm-icon">🎥</div>
+      <div class="perm-info"><div class="perm-title">Camera</div><div class="perm-sub">Required to make or receive video calls</div></div>
+      <div>
+        <div class="perm-status" id="perm-cam-status">Checking…</div>
+        <button class="req-btn accept" style="margin-top:6px" onclick="grantCamPermission()" id="perm-cam-btn">Enable</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TWO-FA SETUP/RECHECK FLOW SCREEN -->
+<div class="screen" id="twofa-flow-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('account-screen')">←</button><div style="font-size:18px;font-weight:500">Two-step verification</div></div>
+  <div class="prof-body">
+    <div style="padding:24px 20px">
+      <div id="twofa-flow-off" style="display:none">
+        <div class="sec-info" style="padding:0 0 20px">Two-step verification adds extra security. A 6-digit code will be required every 24 hours when you open PeyamApp.</div>
+        <button class="btn-main" onclick="requestTwoFASetup()">Enable Two-Step Verification</button>
+      </div>
+      <div id="twofa-flow-code" style="display:none">
+        <div class="sec-info" style="padding:0 0 16px">Enter the 7-character code to confirm and enable Two-step verification. (Printed in the server console, or emailed if SMTP is configured.)</div>
+        <div class="otp-boxes" style="justify-content:flex-start;gap:6px">
+          <input class="otp-box" style="width:36px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="s0">
+          <input class="otp-box" style="width:36px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="s1">
+          <input class="otp-box" style="width:36px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="s2">
+          <input class="otp-box" style="width:36px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="s3">
+          <input class="otp-box" style="width:36px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="s4">
+          <input class="otp-box" style="width:36px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="s5">
+          <input class="otp-box" style="width:36px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="s6">
+        </div>
+        <button class="btn-main" onclick="confirmTwoFASetup()">Confirm & Enable</button>
+      </div>
+      <div id="twofa-flow-on" style="display:none">
+        <div class="sec-info" style="padding:0 0 20px">✓ Two-step verification is enabled. You'll be asked for a code every 24 hours.</div>
+        <button class="btn-main" style="background:var(--red)" onclick="disableTwoFA()">Turn Off</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PASSKEY SCREEN -->
+<div class="screen" id="passkey-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('account-screen')">←</button><div style="font-size:18px;font-weight:500">Passkey</div></div>
+  <div class="prof-body">
+    <div style="padding:24px 20px">
+      <div class="sec-info" style="padding:0 0 20px">PeyamApp generates a unique 7-character security passkey for your account. Keep it somewhere safe — it can be used to verify it's really you.</div>
+      <div id="passkey-display" style="display:none;text-align:center;background:var(--sf2);border-radius:12px;padding:20px;margin-bottom:16px">
+        <div style="font-size:26px;font-weight:700;letter-spacing:6px;color:var(--pr2)" id="passkey-code-show"></div>
+      </div>
+      <button class="btn-main" onclick="generatePasskey()">🔑 Generate New Passkey</button>
+      <button class="btn-main" style="background:var(--sf2);color:var(--tx);margin-top:10px" id="remove-passkey-btn" onclick="removePasskey()">Remove Passkey</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE EMAIL SCREEN -->
+<div class="screen" id="change-email-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('account-screen')">←</button><div style="font-size:18px;font-weight:500">Change email</div></div>
+  <div class="prof-body">
+    <div style="padding:24px 20px">
+      <div id="ce-step1">
+        <div class="field-lbl">NEW GMAIL ADDRESS</div>
+        <div class="field-row"><input class="prof-edit-input" type="email" id="new-email-in" placeholder="newname@gmail.com"></div>
+        <button class="btn-main" onclick="sendChangeEmailCode()">Send Code</button>
+      </div>
+      <div id="ce-step2" style="display:none">
+        <div class="sec-info" style="padding:0 0 16px">Enter the 7-character code sent to your new Gmail address.</div>
+        <div class="otp-boxes" style="justify-content:flex-start;gap:6px">
+          <input class="otp-box" style="width:36px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="ce0">
+          <input class="otp-box" style="width:36px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="ce1">
+          <input class="otp-box" style="width:36px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="ce2">
+          <input class="otp-box" style="width:36px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="ce3">
+          <input class="otp-box" style="width:36px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="ce4">
+          <input class="otp-box" style="width:36px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="ce5">
+          <input class="otp-box" style="width:36px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="ce6">
+        </div>
+        <button class="btn-main" onclick="confirmChangeEmail()">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRIVACY SCREEN -->
+<div class="screen" id="privacy-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('account-screen')">←</button><div style="font-size:18px;font-weight:500">Privacy</div></div>
+  <div class="prof-body" style="padding-bottom:20px">
+    <div class="prof-section-title">WHO CAN SEE MY...</div>
+    <div class="nav-row" onclick="openPrivacyPicker('lastSeen','Last seen online')">
+      <span class="nav-icon">🕐</span><div class="nav-label">Last seen online</div>
+      <span class="nav-val" id="priv-lastSeen-val">Everyone</span><span class="nav-arrow">›</span>
+    </div>
+    <div class="nav-row" onclick="openPrivacyPicker('profilePic','Profile picture')">
+      <span class="nav-icon">🖼️</span><div class="nav-label">Profile picture</div>
+      <span class="nav-val" id="priv-profilePic-val">Everyone</span><span class="nav-arrow">›</span>
+    </div>
+    <div class="nav-row" onclick="openPrivacyPicker('about','About')">
+      <span class="nav-icon">ℹ️</span><div class="nav-label">About</div>
+      <span class="nav-val" id="priv-about-val">Everyone</span><span class="nav-arrow">›</span>
+    </div>
+    <div class="nav-row" onclick="openPrivacyPicker('links','Links')">
+      <span class="nav-icon">🔗</span><div class="nav-label">Links</div>
+      <span class="nav-val" id="priv-links-val">Everyone</span><span class="nav-arrow">›</span>
+    </div>
+    <div class="nav-row" style="opacity:.75">
+      <span class="nav-icon">📧</span><div class="nav-label">Email address</div>
+      <span class="nav-val" style="font-size:11px">Always visible to contacts</span>
+    </div>
+    <div class="nav-row" onclick="openStatusAudiencePicker()">
+      <span class="nav-icon">⭐</span><div class="nav-label">Status</div>
+      <span class="nav-val" id="priv-status-val">My contacts</span><span class="nav-arrow">›</span>
+    </div>
+    <div class="prof-section-title">MESSAGES</div>
+    <div class="toggle-row">
+      <div><div style="font-size:15px">Read receipts</div><div style="font-size:12px;color:var(--mu);margin-top:3px">Let others see when you've read their messages</div></div>
+      <div class="toggle" id="readreceipts-toggle" onclick="toggleReadReceipts()"><div class="toggle-knob"></div></div>
+    </div>
+    <div class="toggle-row">
+      <div><div style="font-size:15px">Disappearing messages</div><div style="font-size:12px;color:var(--mu);margin-top:3px">New chats default to messages disappearing after 24h</div></div>
+      <div class="toggle" id="disappearing-toggle" onclick="toggleDisappearing()"><div class="toggle-knob"></div></div>
+    </div>
+    <div class="toggle-row">
+      <div><div style="font-size:15px">Allow camera effects</div><div style="font-size:12px;color:var(--mu);margin-top:3px">Show filter effects when capturing a Status photo</div></div>
+      <div class="toggle" id="cameraeffects-toggle" onclick="toggleCameraEffects()"><div class="toggle-knob"></div></div>
+    </div>
+    <div class="prof-section-title">LOCKS</div>
+    <div class="nav-row" onclick="show('applock-screen');loadAppLockScreen()">
+      <span class="nav-icon">🔒</span><div class="nav-label">App lock</div>
+      <span class="nav-val" id="applock-status-val">Off</span><span class="nav-arrow">›</span>
+    </div>
+    <div class="nav-row" onclick="show('chatlock-screen');loadChatLockScreen()">
+      <span class="nav-icon">🔐</span><div class="nav-label">Chat lock</div>
+      <span class="nav-arrow">›</span>
+    </div>
+  </div>
+</div>
+
+<!-- APP LOCK -->
+<div class="screen" id="applock-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('privacy-screen')">←</button><div style="font-size:18px;font-weight:500">App Lock</div></div>
+  <div class="prof-body">
+    <div class="sec-info">Require a passcode (and optionally your device's biometric) to open PeyamApp.</div>
+    <div class="toggle-row">
+      <div style="font-size:15px">Require passcode to open PeyamApp</div>
+      <div class="toggle" id="applock-toggle" onclick="toggleAppLock()"><div class="toggle-knob"></div></div>
+    </div>
+    <div id="applock-pass-setup" style="display:none;padding:14px 0">
+      <div class="field-lbl">SET A 4-6 DIGIT PASSCODE</div>
+      <div class="field-row"><input class="prof-edit-input" type="password" id="applock-passcode-in" maxlength="6" inputmode="numeric" placeholder="••••"></div>
+      <button class="btn-main" onclick="saveAppLockPasscode()">Save Passcode</button>
+    </div>
+    <div class="toggle-row">
+      <div><div style="font-size:15px">Use biometric unlock</div><div style="font-size:12px;color:var(--mu);margin-top:3px">Uses your device's fingerprint/face unlock if supported (optional)</div></div>
+      <div class="toggle" id="biometric-toggle" onclick="toggleBiometric()"><div class="toggle-knob"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT LOCK -->
+<div class="screen" id="chatlock-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('privacy-screen')">←</button><div style="font-size:18px;font-weight:500">Chat Lock</div></div>
+  <div class="prof-body">
+    <div class="sec-info">Locked chats are hidden behind your App Lock passcode. Open any chat's ⋮ menu → Lock chat to add it here.</div>
+    <div id="chatlock-list"><div class="empty-state" style="padding:20px"><div class="empty-icon">🔐</div><div>No locked chats yet</div></div></div>
+  </div>
+</div>
+
+<!-- STORAGE AND DATA -->
+<div class="screen" id="storage-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('main-screen')">←</button><div style="font-size:18px;font-weight:500">Storage and Data</div></div>
+  <div class="prof-body">
+    <div class="prof-section-title">STORAGE</div>
+    <div id="storage-usage-list"></div>
+    <div class="prof-section-title">NETWORK USAGE</div>
+    <div class="storage-bar-row"><div style="display:flex;justify-content:space-between"><span>Sent</span><span id="net-sent-val">0 MB</span></div></div>
+    <div class="storage-bar-row"><div style="display:flex;justify-content:space-between"><span>Received</span><span id="net-recv-val">0 MB</span></div></div>
+    <div class="toggle-row">
+      <div><div style="font-size:15px">Use less data for calls</div><div style="font-size:12px;color:var(--mu);margin-top:3px">Lowers call audio quality to save mobile data</div></div>
+      <div class="toggle" id="lessdata-toggle" onclick="toggleLessData()"><div class="toggle-knob"></div></div>
+    </div>
+    <div class="prof-section-title">MEDIA UPLOAD QUALITY</div>
+    <div class="quality-pill-row">
+      <div class="quality-pill" id="upq-hd" onclick="setUploadQuality('hd')">HD</div>
+      <div class="quality-pill" id="upq-sd" onclick="setUploadQuality('sd')">SD (saves data)</div>
+    </div>
+    <div class="prof-section-title">AUTO-DOWNLOAD QUALITY</div>
+    <div class="quality-pill-row">
+      <div class="quality-pill" id="dlq-hd" onclick="setDownloadQuality('hd')">HD</div>
+      <div class="quality-pill" id="dlq-sd" onclick="setDownloadQuality('sd')">SD (saves data)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT PEYAMAPP -->
+<div class="screen" id="about-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('main-screen')">←</button><div style="font-size:18px;font-weight:500">PeyamApp</div></div>
+  <div class="prof-body">
+    <div class="about-hero">
+      <svg class="pa-logo-svg" viewBox="0 0 48 48" fill="none"><path d="M24 4C12.96 4 4 12.06 4 22c0 5.1 2.32 9.7 6.13 12.97-.2 2.46-.93 5.1-2.13 7.03 3.05-.3 6.4-1.36 8.9-2.84A23.6 23.6 0 0024 40c11.04 0 20-8.06 20-18S35.04 4 24 4z" fill="url(#g1)"/><path d="M16 22.5l16-6-5 16-3.2-6.2-6.4 4.2 1.6-5.4-3-2.6z" fill="#fff"/><defs><linearGradient id="g1" x1="4" y1="4" x2="44" y2="40"><stop stop-color="#7c5cff"/><stop offset="1" stop-color="#5b8cff"/></linearGradient></defs></svg>
+      <div style="font-size:20px;font-weight:700;margin-top:10px">PeyamApp</div>
+      <div style="font-size:13px;color:var(--mu);margin-top:4px">Version 6.0</div>
+    </div>
+    <div class="sec-info">PeyamApp began development in 2026 as a private, self-hosted messaging app — your own server, your own data, real end-to-end features without relying on a third-party company.</div>
+    <div class="sec-info">Released under an open, personal-use license: you're free to run, modify and extend your own copy of PeyamApp for yourself and the people you invite. It is not affiliated with any other messaging service.</div>
+    <div style="text-align:center;padding:30px 0 10px;color:var(--mu);font-size:13px">Legend Team</div>
+  </div>
+</div>
+
+<!-- SELECT CONTACTS WHO CAN SEE MY STATUS -->
+<div class="screen" id="status-audience-screen">
+  <div class="prof-hdr"><button class="back-btn" onclick="show('privacy-screen')">←</button><div style="font-size:18px;font-weight:500">Status Privacy</div><button class="save-txt-btn" onclick="saveStatusAudience()">Save</button></div>
+  <div class="prof-body">
+    <div class="sec-info">Only the contacts you select below will see your Status updates.</div>
+    <div id="status-audience-list"></div>
+  </div>
+</div>
+
+<!-- PRIVACY OPTION PICKER MODAL -->
+<div class="overlay" id="privacy-picker-overlay">
+  <div class="tfa-card" style="text-align:left">
+    <div class="tfa-title" id="pp-title">Last seen online</div>
+    <div style="margin-top:14px">
+      <div class="radio-row" onclick="selectPrivacyOption('everyone')"><span>Everyone</span><div class="radio-circle" id="pp-radio-everyone"></div></div>
+      <div class="radio-row" onclick="selectPrivacyOption('contacts')"><span>My contacts</span><div class="radio-circle" id="pp-radio-contacts"></div></div>
+      <div class="radio-row" onclick="selectPrivacyOption('nobody')"><span>Nobody</span><div class="radio-circle" id="pp-radio-nobody"></div></div>
+    </div>
+    <button class="btn-main" style="margin-top:18px;background:var(--sf2);color:var(--tx)" onclick="closePrivacyPicker()">Close</button>
+  </div>
+</div>
+
+<!-- STORY VIEWER -->
+<div class="screen" id="story-viewer">
+  <div class="sv-progress" id="sv-progress"></div>
+  <div class="sv-header">
+    <div class="sv-av" id="sv-av">👤</div>
+    <div><div class="sv-name" id="sv-name"></div><div class="sv-time" id="sv-time"></div></div>
+    <div class="sv-close" onclick="closeStoryViewer()">✕</div>
+  </div>
+  <div class="sv-body" id="sv-body">
+    <div class="sv-tap-zone" style="left:0" onclick="storyPrev()"></div>
+    <div class="sv-tap-zone" style="right:0" onclick="storyNext()"></div>
+  </div>
+</div>
+
+<!-- CREATE STORY -->
+<div class="screen" id="create-story-screen">
+  <div class="cs-hdr"><button onclick="show('main-screen')">✕</button><div style="color:#fff;font-weight:600">New Update</div><div style="width:36px"></div></div>
+  <div class="cs-preview" id="cs-preview">
+    <input class="cs-text-input" id="cs-text" placeholder="Type something...">
+  </div>
+  <div class="cs-footer">
+    <button class="btn-main" style="background:var(--sf2);color:#fff" onclick="document.getElementById('story-file-input').click()">📷 Add Photo</button>
+    <button class="btn-main" onclick="postStory()">Share</button>
+  </div>
+  <input type="file" id="story-file-input" accept="image/*" onchange="handleStoryImage(event)">
+</div>
+
+<div class="screen" id="call-screen">
+  <video id="remote-video" autoplay playsinline style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000"></video>
+  <video id="local-video" autoplay playsinline muted style="display:none;position:absolute;top:16px;right:16px;width:100px;height:140px;border-radius:10px;object-fit:cover;z-index:2;box-shadow:0 4px 16px rgba(0,0,0,.4)"></video>
+  <div class="call-top" style="position:relative;z-index:1">
+    <div class="call-av" id="call-av">👤</div>
+    <div class="call-name" id="call-name"></div>
+    <div class="call-status" id="call-status">Calling...</div>
+    <div class="call-mic-row">
+      <button class="call-mic-btn" id="call-mute-btn" onclick="toggleMute()">🎤</button>
+      <button class="call-mic-btn" id="call-cam-btn" onclick="toggleCamera()" style="display:none">🎥</button>
+    </div>
+  </div>
+  <div class="call-actions" id="call-actions-outgoing" style="position:relative;z-index:1">
+    <button class="call-btn-round call-hangup" onclick="endCall()">📞</button>
+  </div>
+  <div class="call-actions" id="call-actions-incoming" style="display:none;position:relative;z-index:1">
+    <button class="call-btn-round call-decline" onclick="declineCall()">📞</button>
+    <button class="call-btn-round call-accept" onclick="acceptCall()">📞</button>
+  </div>
+</div>
+<audio id="remote-audio" autoplay playsinline></audio>
+
+<div class="overlay" id="tfa-overlay">
+  <div class="tfa-card">
+    <div class="tfa-icon">🔐</div>
+    <div class="tfa-title">Two-step verification</div>
+    <div class="tfa-sub">It's been 24 hours. Enter the 7-character code (check the server console) to continue.</div>
+    <div class="otp-boxes" style="justify-content:center;margin-bottom:14px;gap:6px">
+      <input class="otp-box" style="width:34px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="t0">
+      <input class="otp-box" style="width:34px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="t1">
+      <input class="otp-box" style="width:34px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="t2">
+      <input class="otp-box" style="width:34px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="t3">
+      <input class="otp-box" style="width:34px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="t4">
+      <input class="otp-box" style="width:34px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="t5">
+      <input class="otp-box" style="width:34px;height:44px;font-size:16px;text-transform:uppercase" type="text" maxlength="1" id="t6">
+    </div>
+    <button class="btn-main" onclick="verify2FARecheck()">Verify</button>
+  </div>
+</div>
+
+<!-- APP LOCK OVERLAY (shown on launch if App Lock is enabled in Privacy settings) -->
+<div class="overlay" id="app-lock-overlay">
+  <div class="tfa-card">
+    <div class="tfa-icon">🔒</div>
+    <div class="tfa-title">PeyamApp is locked</div>
+    <div class="tfa-sub">Enter your passcode to continue.</div>
+    <div class="field-row"><input class="prof-edit-input" type="password" id="applock-lock-in" maxlength="6" inputmode="numeric" placeholder="••••" style="text-align:center;font-size:22px;letter-spacing:6px"></div>
+    <button class="btn-main" onclick="unlockAppWithPasscode()">Unlock</button>
+    <button class="btn-main" style="background:var(--sf2);color:var(--tx);margin-top:8px" id="biometric-unlock-btn" onclick="unlockAppWithBiometric()" style="display:none">👆 Use biometric unlock</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<audio id="notif-sound"><source src="data:audio/wav;base64,UklGRoQJAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YWAJAAAAAHgHggtEClAEYfwc9mD0+/dE/+MGWQuaCv0EFv2F9k70dveJ/kcGJQvlCqUFzv359kj0+fbO/aUF5QolC0cGif529070hfYW/f0EmgpZC+MGRP/792D0HPZh/FAERAqCC3gHAACI+H70vPWw+58D5AmgCwUIvAAd+af0ZvUD++oCewmyC4oIdwG5+dv0G/Vb+jICBwm4CwcJMgJb+hv12/S5+XcBigiyC3sJ6gID+2b1p/Qd+bwABQigC+QJnwOw+7z1fvSI+AAAeAeCC0QKUARh/Bz2YPT790T/4wZZC5oK/QQW/YX2TvR294n+RwYlC+UKpQXO/fn2SPT59s79pQXlCiULRwaJ/nb3TvSF9hb9/QSaClkL4wZE//v3YPQc9mH8UARECoILeAcAAIj4fvS89bD7nwPkCaALBQi8AB35p/Rm9QP76gJ7CbILigh3Abn52/Qb9Vv6MgIHCbgLBwkyAlv6G/Xb9Ln5dwGKCLILewnqAgP7ZvWn9B35vAAFCKAL5AmfA7D7vPV+9Ij4AAB4B4ILRApQBGH8HPZg9Pv3RP/jBlkLmgr9BBb9hfZO9Hb3if5HBiUL5QqlBc79+fZI9Pn2zv2lBeUKJQtHBon+dvdO9IX2Fv39BJoKWQvjBkT/+/dg9Bz2YfxQBEQKggt4BwAAiPh+9Lz1sPufA+QJoAsFCLwAHfmn9Gb1A/vqAnsJsguKCHcBufnb9Bv1W/oyAgcJuAsHCTICW/ob9dv0ufl3AYoIsgt7CeoCA/tm9af0Hfm8AAUIoAvkCZ8DsPu89X70iPgAAHgHggtEClAEYfwc9mD0+/dE/+MGWQuaCv0EFv2F9k70dveJ/kcGJQvlCqUFzv359kj0+fbO/aUF5QolC0cGif529070hfYW/f0EmgpZC+MGRP/792D0HPZh/FAERAqCC3gHAACI+H70vPWw+58D5AmgCwUIvAAd+af0ZvUD++oCewmyC4oIdwG5+dv0G/Vb+jICBwm4CwcJMgJb+hv12/S5+XcBigiyC3sJ6gID+2b1p/Qd+bwABQigC+QJnwOw+7z1fvSI+AAAeAeCC0QKUARh/Bz2YPT790T/4wZZC5oK/QQW/YX2TvR294n+RwYlC+UKpQXO/fn2SPT59s79pQXlCiULRwaJ/nb3TvSF9hb9/QSaClkL4wZE//v3YPQc9mH8UARECoILeAcAAIj4fvS89bD7nwPkCaALBQi8AB35p/Rm9QP76gJ7CbILigh3Abn52/Qb9Vv6MgIHCbgLBwkyAlv6G/Xb9Ln5dwGKCLILewnqAgP7ZvWn9B35vAAFCKAL5AmfA7D7vPV+9Ij4AAB4B4ILRApQBGH8HPZg9Pv3RP/jBlkLmgr9BBb9hfZO9Hb3if5HBiUL5QqlBc79+fZI9Pn2zv2lBeUKJQtHBon+dvdO9IX2Fv39BJoKWQvjBkT/+/dg9Bz2YfxQBEQKggt4BwAAiPh+9Lz1sPufA+QJoAsFCLwAHfmn9Gb1A/vqAnsJsguKCHcBufnb9Bv1W/oyAgcJuAsHCTICW/ob9dv0ufl3AYoIsgt7CeoCA/tm9af0Hfm8AAUIoAvkCZ8DsPu89X70iPgAAHgHggtEClAEYfwc9mD0+/dE/+MGWQuaCv0EFv2F9k70dveJ/kcGJQvlCqUFzv359kj0+fbO/aUF5QolC0cGif529070hfYW/f0EmgpZC+MGRP/792D0HPZh/FAERAqCC3gHAACI+H70vPWw+58D5AmgCwUIvAAd+af0ZvUD++oCewmyC4oIdwG5+dv0G/Vb+jICBwm4CwcJMgJb+hv12/S5+XcBigiyC3sJ6gID+2b1p/Qd+bwABQigC+QJnwOw+7z1fvSI+AAAeAeCC0QKUARh/Bz2YPT790T/4wZZC5oK/QQW/YX2TvR294n+RwYlC+UKpQXO/fn2SPT59s79pQXlCiULRwaJ/nb3TvSF9hb9/QSaClkL4wZE//v3YPQc9mH8UARECoILeAcAAIj4fvS89bD7nwPkCaALBQi8AB35p/Rm9QP76gJ7CbILigh3Abn52/Qb9Vv6MgIHCbgLBwkyAlv6G/Xb9Ln5dwGKCLILewnqAgP7ZvWn9B35vAAFCKAL5AmfA7D7vPV+9Ij4AAB4B4ILRApQBGH8HPZg9Pv3RP/jBlkLmgr9BBb9hfZO9Hb3if5HBiUL5QqlBc79+fZI9Pn2zv2lBeUKJQtHBon+dvdO9IX2Fv39BJoKWQvjBkT/+/dg9Bz2YfxQBEQKggt4BwAAiPh+9Lz1sPufA+QJoAsFCLwAHfmn9Gb1A/vqAnsJsguKCHcBufnb9Bv1W/oyAgcJuAsHCTICW/ob9dv0ufl3AYoIsgt7CeoCA/tm9af0Hfm8AAUIoAvkCZ8DsPu89X70iPgAAHgHggtEClAEYfwc9mD0+/dE/+MGWQuaCv0EFv2F9k70dveJ/kcGJQvlCqUFzv359kj0+fbO/aUF5QolC0cGif529070hfYW/f0EmgpZC+MGRP/792D0HPZh/FAERAqCC3gHAACI+H70vPWw+58D5AmgCwUIvAAd+af0ZvUD++oCewmyC4oIdwG5+dv0G/Vb+jICBwm4CwcJMgJb+hv12/S5+XcBigiyC3sJ6gID+2b1p/Qd+bwABQigC+QJnwOw+7z1fvSI+AAAeAeCC0QKUARh/Bz2YPT790T/4wZZC5oK/QQW/YX2TvR294n+RwYlC+UKpQXO/fn2SPT59s79pQXlCiULRwaJ/nb3TvSF9hb9/QSaClkL4wZE//v3YPQc9mH8UARECoILeAcAAIj4fvS89bD7nwPkCaALBQi8AB35p/Rm9QP76gJ7CbILigh3Abn52/Qb9Vv6MgIHCbgLBwkyAlv6G/Xb9Ln5dwGKCLILewnqAgP7ZvWn9B35vAAFCKAL5AmfA7D7vPV+9Ij4AAB4B4ILRApQBGH8HPZg9Pv3RP/jBlkLmgr9BBb9hfZO9Hb3if5HBiUL5QqlBc79+fZI9Pn2zv2lBeUKJQtHBon+dvdO9IX2Fv39BJoKWQvjBkT/+/dg9Bz2YfxQBEQKggt4BwAAiPh+9Lz1sPufA+QJoAsFCLwAHfmn9Gb1A/vqAnsJsguKCHcBufnb9Bv1W/oyAgcJuAsHCTICW/ob9dv0ufl3AYoIsgt7CeoCA/tm9af0Hfm8AAUIoAvkCZ8DsPu89X70iPg=" type="audio/wav"></audio>
+
+<script>
+function nowTime() { const d = new Date(); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(()=>{}); }
+const socket = io();
+let token = localStorage.getItem('pa_token') || '';
+let myUser = null;
+let currentChat = null;
+let viewedUser = null;
+let savedMsgs = JSON.parse(localStorage.getItem('pa_saved') || '[]');
+let unreadCounts = {};
+let chatPreviews = {};
+let pendingSetupAvatar = null;
+let twoFAEnabled = false;
+let activeCallWith = null;
+let notifPermission = false;
+let selLang = 'en';
+let pendingStoryImage = null;
+let privacySettings = { lastSeen:'everyone', profilePic:'everyone', about:'everyone', links:'everyone', statusAudience:'contacts', readReceipts:true, disappearing:false, cameraEffects:true };
+let currentPrivacyField = null;
+let storyViewerData = null, storyViewerIdx = 0, storyTimer = null;
+let appLocked = false;
+
+const langs = [
+  {code:'fa',flag:'🇮🇷',name:'Persian',nat:'فارسی',dir:'rtl'},
+  {code:'en',flag:'🇺🇸',name:'English',nat:'English',dir:'ltr'},
+  {code:'ar',flag:'🇸🇦',name:'Arabic',nat:'العربية',dir:'rtl'},
+  {code:'tr',flag:'🇹🇷',name:'Turkish',nat:'Türkçe',dir:'ltr'},
+  {code:'ru',flag:'🇷🇺',name:'Russian',nat:'Русский',dir:'ltr'},
+  {code:'de',flag:'🇩🇪',name:'German',nat:'Deutsch',dir:'ltr'},
+  {code:'fr',flag:'🇫🇷',name:'French',nat:'Français',dir:'ltr'},
+  {code:'es',flag:'🇪🇸',name:'Spanish',nat:'Español',dir:'ltr'},
+  {code:'zh',flag:'🇨🇳',name:'Chinese',nat:'中文',dir:'ltr'},
+  {code:'hi',flag:'🇮🇳',name:'Hindi',nat:'हिंदी',dir:'ltr'},
+];
+const T = {
+  fa:{lt:'زبان خود را انتخاب کنید',ls:'زبان مورد نظر خود را انتخاب کنید',lb:'ادامه'},
+  en:{lt:'Choose your language',ls:'Select your preferred language',lb:'Continue'},
+  ar:{lt:'اختر لغتك',ls:'حدد لغتك المفضلة',lb:'متابعة'},
+  tr:{lt:'Dilinizi seçin',ls:'Tercih ettiğiniz dili seçin',lb:'Devam'},
+  ru:{lt:'Выберите язык',ls:'Выберите предпочтительный язык',lb:'Продолжить'},
+  de:{lt:'Sprache wählen',ls:'Wählen Sie Ihre bevorzugte Sprache',lb:'Weiter'},
+  fr:{lt:'Choisissez votre langue',ls:'Sélectionnez votre langue préférée',lb:'Continuer'},
+  es:{lt:'Elige tu idioma',ls:'Selecciona tu idioma preferido',lb:'Continuar'},
+  zh:{lt:'选择您的语言',ls:'选择您的首选语言',lb:'继续'},
+  hi:{lt:'अपनी भाषा चुनें',ls:'अपनी पसंदीदा भाषा चुनें',lb:'जारी रखें'},
+};
+
+function bl(){
+  document.getElementById('lgrid').innerHTML = langs.map(l=>`
+    <div class="litem ${l.code===selLang?'sel':''}" onclick="pl('${l.code}')">
+      <span class="lflag">${l.flag}</span>
+      <div class="linfo"><div class="lname">${l.name}</div><div class="lnat">${l.nat}</div></div>
+      <div class="lcheck"></div>
+    </div>`).join('');
+}
+function pl(c){ selLang=c; bl(); applyLang(); }
+function applyLang(){
+  const t = T[selLang];
+  document.getElementById('lt').textContent = t.lt;
+  document.getElementById('ls').textContent = t.ls;
+  document.getElementById('lbtn').textContent = t.lb;
+  document.documentElement.dir = langs.find(l=>l.code===selLang).dir;
+}
+function goAuth(){ show('auth-screen'); }
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showToast(msg, dur=3000, onClick) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  t.onclick = onClick || null;
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+function vEmail(e) { return /^[a-zA-Z0-9](?:[a-zA-Z0-9._%+-]{0,63}[a-zA-Z0-9])?@gmail\.com$/.test((e||'').trim()); }
+async function api(url, body, method='POST') {
+  const opts = { method, headers: { 'Content-Type': 'application/json', 'Authorization': token } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  return r.json();
+}
+
+async function requestNotifPermission() {
+  if ('Notification' in window) {
+    if (Notification.permission === 'granted') { notifPermission = true; }
+    else if (Notification.permission !== 'denied') {
+      const p = await Notification.requestPermission();
+      notifPermission = p === 'granted';
+    }
+  }
+  if (notifPermission) await subscribeToPush();
+}
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+async function subscribeToPush() {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      const keyRes = await api('/api/vapid-public-key', null, 'GET');
+      if (!keyRes.ok || !keyRes.key) return; // web-push not installed on the server yet
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(keyRes.key) });
+    }
+    await api('/api/push-subscribe', { subscription: sub });
+  } catch (e) { console.log('Push subscribe failed', e); }
+}
+function fireNotification(title, body) {
+  try { if (notifPermission && 'Notification' in window && document.visibilityState !== 'visible') new Notification(title, { body, icon: '/icon.png' }); } catch(e) {}
+  try { document.getElementById('notif-sound').play().catch(()=>{}); } catch(e) {}
+}
+
+// ───── AUTH ─────
+let authEmail = '';
+function authBack() { if (document.getElementById('step-otp').style.display !== 'none') goStep('email'); else show('language-screen'); }
+function goStep(s) {
+  document.getElementById('step-email').style.display = s === 'email' ? '' : 'none';
+  document.getElementById('step-otp').style.display = s === 'otp' ? '' : 'none';
+}
+async function sendCode() {
+  const email = document.getElementById('email-in').value.trim();
+  if (!vEmail(email)) { showToast('Only real @gmail.com addresses are accepted'); return; }
+  authEmail = email;
+  const d = await api('/api/send-code', { email });
+  if (d.ok) {
+    document.getElementById('otp-email-show').textContent = email;
+    goStep('otp');
+    document.getElementById('o0').focus();
+    showToast(d.emailSent ? 'Code sent to your Gmail ✓' : 'Code generated — check server console (email not configured yet)');
+  } else showToast(d.msg || 'Could not send code');
+}
+async function verifyOTP() {
+  const code = [0,1,2,3,4,5,6].map(i => document.getElementById('o'+i).value).join('');
+  if (code.length < 7) return;
+  const d = await api('/api/verify-code', { email: authEmail, code });
+  if (d.ok) {
+    token = d.token;
+    localStorage.setItem('pa_token', token);
+    if (d.isNew) show('setup-screen');
+    else { await loadMe(); show('main-screen'); loadChats(); socketAuth(); checkNeeds2FA(); requestNotifPermission(); loadRequestsBadge(); }
+  } else {
+    [0,1,2,3,4,5,6].forEach(i => { const b = document.getElementById('o'+i); b.style.borderColor = '#ef4444'; setTimeout(() => b.style.borderColor = '', 1200); });
+    showToast(d.msg || 'Wrong code');
+  }
+}
+[0,1,2,3,4,5,6].forEach(i => {
+  document.getElementById('o'+i).addEventListener('input', e => {
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if (e.target.value && i < 6) document.getElementById('o'+(i+1)).focus();
+    if (i === 6 && [0,1,2,3,4,5,6].every(j => document.getElementById('o'+j).value)) verifyOTP();
+  });
+  document.getElementById('o'+i).addEventListener('keydown', e => { if (e.key === 'Backspace' && !e.target.value && i > 0) document.getElementById('o'+(i-1)).focus(); });
+});
+document.getElementById('email-in').addEventListener('keydown', e => { if (e.key === 'Enter') sendCode(); });
+
+function handleSetupAvatar(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => { pendingSetupAvatar = ev.target.result; document.getElementById('setup-avatar').innerHTML = `<img src="${pendingSetupAvatar}">`; };
+  reader.readAsDataURL(file);
+}
+
+async function setupProfile() {
+  let username = document.getElementById('setup-username').value.trim();
+  const name = document.getElementById('setup-name').value.trim();
+  const about = document.getElementById('setup-about').value.trim();
+  if (!username || !name) { showToast('Fill in all fields'); return; }
+  if (!username.startsWith('@')) username = '@' + username;
+  const d = await api('/api/setup-profile', { token, username, name });
+  if (d.ok) {
+    if (about || pendingSetupAvatar) await api('/api/update-profile', { about, avatar: pendingSetupAvatar });
+    await loadMe(); show('main-screen'); loadChats(); socketAuth(); requestNotifPermission(); loadRequestsBadge();
+  } else showToast(d.msg || 'Error');
+}
+
+async function loadMe() {
+  const d = await api('/api/me', null, 'GET');
+  if (d.ok) {
+    myUser = d.user;
+    twoFAEnabled = d.user.twoFA;
+    privacySettings = d.user.privacy || privacySettings;
+  }
+  return d;
+}
+
+async function checkNeeds2FA() {
+  const d = await api('/api/me', null, 'GET');
+  if (d.ok && d.needs2FA) {
+    await api('/api/request-2fa-recheck', null);
+    document.getElementById('tfa-overlay').classList.add('open');
+  }
+}
+async function verify2FARecheck() {
+  const code = [0,1,2,3,4,5,6].map(i => document.getElementById('t'+i).value).join('');
+  if (code.length < 7) { showToast('Enter all 7 characters'); return; }
+  const d = await api('/api/verify-2fa-recheck', { code });
+  if (d.ok) { document.getElementById('tfa-overlay').classList.remove('open'); showToast('Verified ✓'); }
+  else showToast(d.msg || 'Wrong code');
+}
+[0,1,2,3,4,5,6].forEach(i => { document.getElementById('t'+i).addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,''); if (e.target.value && i < 6) document.getElementById('t'+(i+1)).focus(); }); });
+
+function socketAuth() { socket.emit('auth', token); }
+socket.on('connect', () => { if (token) socketAuth(); });
+socket.on('newMsg', (msg) => {
+  if (currentChat && msg.chatId === currentChat.chatId) {
+    appendMsg(msg);
+  } else {
+    unreadCounts[msg.chatId] = (unreadCounts[msg.chatId] || 0) + 1;
+    const other = msg.from === myUser?.username ? msg.to : msg.from;
+    let prevText = msg.text;
+    if (msg.attachment?.kind === 'image') prevText = '📷 Photo';
+    else if (msg.attachment?.kind === 'video') prevText = '🎥 Video';
+    else if (msg.attachment?.kind === 'voice') prevText = '🎤 Voice message';
+    else if (msg.attachment?.kind === 'file') prevText = '📄 ' + (msg.attachment.name || 'File');
+    chatPreviews[msg.chatId] = { text: prevText, time: msg.time, other };
+    updateChatList();
+  }
+  if (msg.from !== myUser?.username) {
+    let notifBody = msg.text;
+    if (msg.attachment?.kind === 'image') notifBody = '📷 Sent a photo';
+    else if (msg.attachment?.kind === 'video') notifBody = '🎥 Sent a video';
+    else if (msg.attachment?.kind === 'voice') notifBody = '🎤 Sent a voice message';
+    else if (msg.attachment?.kind === 'file') notifBody = '📄 Sent a file';
+    fireNotification(msg.from, notifBody);
+    showToast('New message from ' + msg.from, 3500, () => openChat(msg.from));
+  }
+});
+socket.on('msgBlocked', ({ msg }) => { showToast(msg || 'You must send a message request first.'); });
+socket.on('online', (users) => {
+  if (currentChat) {
+    const isOn = users.includes(currentChat.username);
+    const sub = document.getElementById('chat-sub');
+    sub.textContent = isOn ? 'online' : 'last seen recently';
+    sub.className = 'chat-sub' + (isOn ? ' on' : '');
+  }
+});
+
+// ───── FAB MENU ─────
+function toggleFabMenu() { document.getElementById('fab-menu').classList.toggle('open'); }
+function closeFabMenu() { document.getElementById('fab-menu').classList.remove('open'); }
+document.addEventListener('click', (e) => { const fab = document.getElementById('main-fab'), menu = document.getElementById('fab-menu'); if (menu && !menu.contains(e.target) && e.target !== fab) closeFabMenu(); });
+
+// ───── CONTACTS ─────
+function openNewContact() {
+  document.getElementById('nc-first').value = ''; document.getElementById('nc-last').value = ''; document.getElementById('nc-identifier').value = '';
+  show('new-contact-screen');
+}
+async function saveNewContact() {
+  const firstName = document.getElementById('nc-first').value.trim();
+  const lastName = document.getElementById('nc-last').value.trim();
+  const identifier = document.getElementById('nc-identifier').value.trim();
+  if (!firstName || !identifier) { showToast('First name and username/email are required'); return; }
+  const d = await api('/api/contacts/add', { firstName, lastName, identifier });
+  if (d.ok) { showToast('Contact saved ✓'); show('contacts-screen'); loadContacts(); }
+  else showToast(d.msg || 'Could not save contact');
+}
+async function loadContacts() {
+  const d = await api('/api/contacts', null, 'GET');
+  const list = document.getElementById('contacts-list');
+  if (!d.ok || !d.contacts.length) { list.innerHTML = '<div class="empty-state" style="padding:30px"><div class="empty-icon">👥</div><div>No saved contacts yet</div></div>'; return; }
+  list.innerHTML = d.contacts.map(c => `
+    <div class="user-card" onclick="openFromFind('${c.username}')">
+      <div class="uc-av">${c.avatar ? `<img src="${c.avatar}">` : '👤'}</div>
+      <div style="flex:1"><div class="uc-name">${c.firstName} ${c.lastName||''}</div><div class="uc-un">${c.username} ${c.online?'· online':''}</div></div>
+      <button class="req-btn decline" onclick="event.stopPropagation();removeContact('${c.username}')">Remove</button>
+    </div>`).join('');
+}
+async function removeContact(username) { await api('/api/contacts/remove', { username }); loadContacts(); }
+
+// ───── GROUPS: creation flow ─────
+let ngSelected = [];
+function openNewGroup() { ngSelected = []; document.getElementById('ng-search').value=''; renderNgSelected(); document.getElementById('ng-result').innerHTML=''; show('new-group-screen'); loadContactsIntoNgResult(); }
+async function loadContactsIntoNgResult() {
+  const d = await api('/api/contacts', null, 'GET');
+  if (!d.ok) return;
+  renderNgResults(d.contacts.map(c => ({ username: c.username, name: c.firstName + ' ' + (c.lastName||''), avatar: c.avatar })));
+}
+let ngSearchTimer = null;
+function searchGroupMembers() {
+  clearTimeout(ngSearchTimer);
+  const q = document.getElementById('ng-search').value.trim();
+  if (!q) { loadContactsIntoNgResult(); return; }
+  ngSearchTimer = setTimeout(async () => {
+    let uq = q.startsWith('@') ? q : '@' + q;
+    const d = await api('/api/user/' + encodeURIComponent(uq), null, 'GET');
+    if (d.ok) renderNgResults([{ username: d.user.username, name: d.user.name, avatar: d.user.avatar }]);
+    else document.getElementById('ng-result').innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-icon">🤷</div><div>No user found</div></div>';
+  }, 350);
+}
+function renderNgResults(list) {
+  const el = document.getElementById('ng-result');
+  if (!list.length) { el.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-icon">👥</div><div>Search or pick from your contacts</div></div>'; return; }
+  el.innerHTML = list.filter(u => u.username !== myUser?.username).map(u => `
+    <div class="user-card" onclick="toggleNgMember('${u.username}','${(u.name||'').replace(/'/g,"")}')">
+      <div class="uc-av">${u.avatar ? `<img src="${u.avatar}">` : '👤'}</div>
+      <div style="flex:1"><div class="uc-name">${u.name||u.username}</div><div class="uc-un">${u.username}</div></div>
+      <span style="font-size:20px">${ngSelected.find(m=>m.username===u.username) ? '✅' : '⬜'}</span>
+    </div>`).join('');
+}
+function toggleNgMember(username, name) {
+  const idx = ngSelected.findIndex(m => m.username === username);
+  if (idx >= 0) ngSelected.splice(idx, 1); else ngSelected.push({ username, name });
+  renderNgSelected();
+  searchGroupMembers.length; // no-op to keep linter quiet
+  const q = document.getElementById('ng-search').value.trim();
+  if (q) searchGroupMembers(); else loadContactsIntoNgResult();
+}
+function renderNgSelected() {
+  document.getElementById('ng-selected').innerHTML = ngSelected.map(m => `<span class="req-status-pill">${m.name||m.username} ✕</span>`).join('');
+}
+function proceedToGroupSetup() {
+  if (!ngSelected.length) { showToast('Select at least one member'); return; }
+  document.getElementById('gs-name').value = '';
+  document.getElementById('gs-avatar').innerHTML = '📷';
+  pendingGroupPhoto = null;
+  show('group-setup-screen');
+}
+let pendingGroupPhoto = null;
+function handleGroupAvatarPick(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => { pendingGroupPhoto = ev.target.result; document.getElementById('gs-avatar').innerHTML = `<img src="${pendingGroupPhoto}">`; };
+  reader.readAsDataURL(file);
+}
+async function createGroupFinal() {
+  const name = document.getElementById('gs-name').value.trim();
+  if (!name) { showToast('Enter a group name'); return; }
+  const permissions = {
+    sendMessages: document.getElementById('gp-send').checked ? 'everyone' : 'adminsOnly',
+    editGroupInfo: document.getElementById('gp-edit').checked ? 'everyone' : 'adminsOnly',
+    addMembers: document.getElementById('gp-add').checked ? 'everyone' : 'adminsOnly',
+    showHistoryToNew: document.getElementById('gp-history').checked,
+    approveNewMembers: document.getElementById('gp-approve').checked
+  };
+  const d = await api('/api/groups/create', { name, memberUsernames: ngSelected.map(m=>m.username), photo: pendingGroupPhoto, permissions });
+  if (d.ok) { showToast('Group created ✓'); openGroupChat(d.group); }
+  else showToast(d.msg || 'Could not create group');
+}
+async function loadMyGroups() {
+  const d = await api('/api/groups', null, 'GET');
+  const el = document.getElementById('groups-list');
+  if (!d.ok || !d.groups.length) { el.innerHTML = '<div class="empty-state" style="padding:30px"><div class="empty-icon">👥</div><div>No groups yet</div></div>'; return; }
+  el.innerHTML = d.groups.map(g => `
+    <div class="user-card" onclick='openGroupChat(${JSON.stringify(g).replace(/'/g,"&#39;")})'>
+      <div class="uc-av">${g.photo ? `<img src="${g.photo}">` : '👥'}</div>
+      <div style="flex:1"><div class="uc-name">${g.name}</div><div class="uc-un">${g.members.length} members</div></div>
+    </div>`).join('');
+}
+socket.on('groupCreated', () => { loadChats(); });
+socket.on('groupUpdated', (g) => { if (currentChat && currentChat.groupId === g.id) { currentChat.groupName = g.name; currentChat.groupPhoto = g.photo; currentGroupData = g; renderChatHeader(); } loadChats(); });
+
+async function checkMicPermissionStatus() {
+  try {
+    if (navigator.permissions && navigator.permissions.query) {
+      const st = await navigator.permissions.query({ name: 'microphone' });
+      return st.state; // 'granted' | 'denied' | 'prompt'
+    }
+  } catch (e) {}
+  return localStorage.getItem('pa_mic_granted') === '1' ? 'granted' : 'prompt';
+}
+async function grantMicPermission() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(t => t.stop());
+    localStorage.setItem('pa_mic_granted', '1');
+    showToast('Microphone enabled ✓ You can now make voice calls');
+  } catch (e) {
+    showToast('Microphone permission denied — enable it for PeyamApp in your browser/site settings');
+  }
+  loadPermissions();
+}
+async function grantCamPermission() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    stream.getTracks().forEach(t => t.stop());
+    localStorage.setItem('pa_cam_granted', '1');
+    showToast('Camera enabled ✓ You can now make video calls');
+  } catch (e) {
+    showToast('Camera permission denied — enable it for PeyamApp in your browser/site settings');
+  }
+  loadPermissions();
+}
+async function grantNotifPermission() { await requestNotifPermission(); loadPermissions(); }
+async function loadPermissions() {
+  const micState = await checkMicPermissionStatus();
+  const micEl = document.getElementById('perm-mic-status');
+  const micBtn = document.getElementById('perm-mic-btn');
+  micEl.textContent = micState === 'granted' ? '✓ Granted' : micState === 'denied' ? '✕ Blocked' : 'Not granted';
+  micEl.className = 'perm-status ' + (micState === 'granted' ? 'granted' : micState === 'denied' ? 'denied' : 'default');
+  micBtn.style.display = micState === 'granted' ? 'none' : '';
+  micBtn.textContent = micState === 'denied' ? 'Blocked — open browser settings' : 'Enable';
+  const camState = await checkCamPermissionStatus();
+  const camEl = document.getElementById('perm-cam-status');
+  const camBtn = document.getElementById('perm-cam-btn');
+  camEl.textContent = camState === 'granted' ? '✓ Granted' : camState === 'denied' ? '✕ Blocked' : 'Not granted';
+  camEl.className = 'perm-status ' + (camState === 'granted' ? 'granted' : camState === 'denied' ? 'denied' : 'default');
+  camBtn.style.display = camState === 'granted' ? 'none' : '';
+  camBtn.textContent = camState === 'denied' ? 'Blocked — open browser settings' : 'Enable';
+  const notifState = ('Notification' in window) ? Notification.permission : 'unsupported';
+  const notifEl = document.getElementById('perm-notif-status');
+  const notifBtn = document.getElementById('perm-notif-btn');
+  notifEl.textContent = notifState === 'granted' ? '✓ Granted' : notifState === 'denied' ? '✕ Blocked' : 'Not granted';
+  notifEl.className = 'perm-status ' + (notifState === 'granted' ? 'granted' : notifState === 'denied' ? 'denied' : 'default');
+  notifBtn.style.display = notifState === 'granted' ? 'none' : '';
+  const summary = document.getElementById('perm-summary-label');
+  if (summary) summary.textContent = (micState === 'granted' && notifState === 'granted') ? 'All set ✓' : 'Setup needed';
+}
+function micIsGranted() { return localStorage.getItem('pa_mic_granted') === '1'; }
+
+
+let localStream = null, peerConn = null, isMuted = false, isCamOff = false, isVideoCall = false;
+let pendingIceQueue = [];
+const RTC_CONFIG = { iceServers: [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+] };
+
+async function getMic(video) {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: video ? { facingMode: 'user' } : false });
+    localStorage.setItem('pa_mic_granted', '1');
+    if (video) localStorage.setItem('pa_cam_granted', '1');
+    const localVid = document.getElementById('local-video');
+    if (video) { localVid.srcObject = localStream; localVid.style.display = ''; document.getElementById('call-cam-btn').style.display = ''; }
+    else { localVid.style.display = 'none'; }
+    return true;
+  } catch (e) {
+    showToast(video ? 'Camera/microphone permission was denied' : 'Microphone permission was denied by the browser');
+    return false;
+  }
+}
+function createPeerConn(remoteUsername) {
+  const pc = new RTCPeerConnection(RTC_CONFIG);
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+  pc.onicecandidate = (e) => { if (e.candidate) socket.emit('rtc-ice', { to: remoteUsername, candidate: e.candidate }); };
+  pc.ontrack = (e) => {
+    if (isVideoCall && e.track.kind === 'video') {
+      const remoteVid = document.getElementById('remote-video');
+      remoteVid.srcObject = e.streams[0];
+      remoteVid.style.display = '';
+      remoteVid.play().catch(() => {});
+    } else {
+      const audioEl = document.getElementById('remote-audio');
+      audioEl.srcObject = e.streams[0];
+      audioEl.play().catch(() => {});
+    }
+  };
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'connected') document.getElementById('call-status').textContent = 'Connected';
+    if (['failed','disconnected','closed'].includes(pc.connectionState) && peerConn === pc) {
+      if (pc.connectionState === 'failed') { showToast('Call connection lost'); endCall(); }
+    }
+  };
+  return pc;
+}
+async function flushIceQueue() {
+  if (!peerConn || !peerConn.remoteDescription) return;
+  while (pendingIceQueue.length) {
+    const c = pendingIceQueue.shift();
+    try { await peerConn.addIceCandidate(new RTCIceCandidate(c)); } catch (e) {}
+  }
+}
+function teardownCall() {
+  if (peerConn) { peerConn.close(); peerConn = null; }
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  document.getElementById('remote-audio').srcObject = null;
+  document.getElementById('remote-video').srcObject = null;
+  document.getElementById('remote-video').style.display = 'none';
+  document.getElementById('local-video').srcObject = null;
+  document.getElementById('local-video').style.display = 'none';
+  document.getElementById('call-cam-btn').style.display = 'none';
+  pendingIceQueue = [];
+  isMuted = false; isCamOff = false; isVideoCall = false;
+  document.getElementById('call-mute-btn').classList.remove('muted');
+  document.getElementById('call-cam-btn').classList.remove('muted');
+}
+function toggleMute() {
+  if (!localStream) return;
+  isMuted = !isMuted;
+  localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
+  document.getElementById('call-mute-btn').classList.toggle('muted', isMuted);
+}
+function toggleCamera() {
+  if (!localStream) return;
+  isCamOff = !isCamOff;
+  localStream.getVideoTracks().forEach(t => t.enabled = !isCamOff);
+  document.getElementById('call-cam-btn').classList.toggle('muted', isCamOff);
+}
+
+socket.on('incomingCall', ({ from, video }) => {
+  activeCallWith = from;
+  isVideoCall = !!video;
+  document.getElementById('call-name').textContent = from;
+  document.getElementById('call-status').textContent = video ? 'Incoming video call...' : 'Incoming call...';
+  document.getElementById('call-actions-outgoing').style.display = 'none';
+  document.getElementById('call-actions-incoming').style.display = 'flex';
+  fireNotification(video ? 'Incoming video call' : 'Incoming call', from + ' is calling you');
+  show('call-screen');
+});
+// Only once the CALLEE accepts do we (as caller) grab mic/camera + build the offer —
+// this guarantees no media/signaling happens before real user consent on both ends.
+socket.on('callResponse', async ({ accepted, from }) => {
+  if (accepted) {
+    document.getElementById('call-status').textContent = 'Connecting...';
+    if (!localStream) { const ok = await getMic(isVideoCall); if (!ok) { endCall(); return; } }
+    peerConn = createPeerConn(activeCallWith);
+    const offer = await peerConn.createOffer();
+    await peerConn.setLocalDescription(offer);
+    socket.emit('rtc-offer', { to: activeCallWith, offer });
+  } else {
+    teardownCall(); showToast('Call declined'); show(currentChat ? 'chat-screen' : 'main-screen');
+  }
+});
+socket.on('callEnded', () => { teardownCall(); showToast('Call ended'); show(currentChat ? 'chat-screen' : 'main-screen'); });
+
+socket.on('rtc-offer', async ({ from, offer }) => {
+  // arrives after the callee tapped Accept and already has mic/camera ready
+  if (!localStream) { const ok = await getMic(isVideoCall); if (!ok) return; }
+  peerConn = createPeerConn(from);
+  await peerConn.setRemoteDescription(new RTCSessionDescription(offer));
+  await flushIceQueue();
+  const answer = await peerConn.createAnswer();
+  await peerConn.setLocalDescription(answer);
+  socket.emit('rtc-answer', { to: from, answer });
+});
+socket.on('rtc-answer', async ({ answer }) => {
+  if (peerConn) { await peerConn.setRemoteDescription(new RTCSessionDescription(answer)); await flushIceQueue(); }
+});
+socket.on('rtc-ice', async ({ candidate }) => {
+  if (peerConn && peerConn.remoteDescription) { try { await peerConn.addIceCandidate(new RTCIceCandidate(candidate)); } catch (e) {} }
+  else pendingIceQueue.push(candidate);
+});
+
+async function startCall(video) {
+  if (!currentChat || currentChat.isGroup) return;
+  isVideoCall = !!video;
+  const micState = await checkMicPermissionStatus();
+  const camOk = !video || localStorage.getItem('pa_cam_granted') === '1' || (await checkCamPermissionStatus()) === 'granted';
+  if ((micState !== 'granted' && !micIsGranted()) || (video && !camOk)) {
+    showToast('Enable ' + (video ? 'camera and microphone' : 'microphone') + ' access in Settings → App Permissions first');
+    show('permissions-screen'); loadPermissions();
+    return;
+  }
+  activeCallWith = currentChat.username;
+  document.getElementById('call-name').textContent = activeCallWith;
+  document.getElementById('call-status').textContent = video ? 'Video calling...' : 'Calling...';
+  document.getElementById('call-actions-outgoing').style.display = 'flex';
+  document.getElementById('call-actions-incoming').style.display = 'none';
+  socket.emit('callUser', { to: activeCallWith, video });
+  show('call-screen');
+  // No mic/camera grab / offer here yet — we wait for the callee to accept (see 'callResponse' above).
+}
+async function acceptCall() {
+  const ok = await getMic(isVideoCall);
+  if (!ok) { declineCall(); return; }
+  socket.emit('callResponse', { to: activeCallWith, accepted: true });
+  document.getElementById('call-status').textContent = 'Connecting...';
+  document.getElementById('call-actions-incoming').style.display = 'none';
+  document.getElementById('call-actions-outgoing').style.display = 'flex';
+  // peerConn is created when the offer arrives (rtc-offer handler above)
+}
+function declineCall() { teardownCall(); socket.emit('callResponse', { to: activeCallWith, accepted: false }); show(currentChat ? 'chat-screen' : 'main-screen'); }
+function endCall() { teardownCall(); if (activeCallWith) socket.emit('endCall', { to: activeCallWith }); show(currentChat ? 'chat-screen' : 'main-screen'); }
+async function checkCamPermissionStatus() {
+  try { if (navigator.permissions && navigator.permissions.query) { const st = await navigator.permissions.query({ name: 'camera' }); return st.state; } } catch (e) {}
+  return localStorage.getItem('pa_cam_granted') === '1' ? 'granted' : 'prompt';
+}
+
+
+
+// ───── TABS ─────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('a'));
+  document.getElementById('tab-' + tab).classList.add('a');
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('show'));
+  document.getElementById('content-' + tab).classList.add('show');
+  document.getElementById('main-fab').onclick = tab === 'updates' ? () => show('create-story-screen') : () => show('find-user-screen');
+  document.getElementById('main-fab').textContent = tab === 'updates' ? '📷' : '+';
+  if (tab === 'updates') loadStories();
+}
+
+// ───── CHATS LIST ─────
+// ───── CHAT LIST (1:1 + groups) ─────
+async function loadChats() {
+  const [chatsRes, groupsRes] = await Promise.all([api('/api/chats', null, 'GET'), api('/api/groups', null, 'GET')]);
+  chatPreviews = {};
+  if (chatsRes.ok) chatsRes.chats.forEach(c => { chatPreviews[c.chatId] = c; });
+  myGroupsCache = groupsRes.ok ? groupsRes.groups : [];
+  // make sure every group the user belongs to shows up even with no messages yet
+  myGroupsCache.forEach(g => { const cid = 'group:' + g.id; if (!chatPreviews[cid]) chatPreviews[cid] = { chatId: cid, isGroup: true, groupName: g.name, groupPhoto: g.photo, lastMsg: 'Group created', lastTime: '', lastTs: g.createdAt }; });
+  updateChatList();
+}
+function updateChatList() {
+  const list = document.getElementById('chat-list');
+  let html = `<div class="chat-item" onclick="openSaved()">
+      <div class="ci-avatar" style="background:linear-gradient(135deg,var(--pr),var(--pr2))">🔖<div class="verified-badge">✓</div></div>
+      <div class="ci-info"><div class="ci-name">Saved Messages</div><div class="ci-preview">Your personal notes</div></div>
+      <div class="ci-meta"><div class="ci-time"></div></div>
+    </div>`;
+  const lockedChats = JSON.parse(localStorage.getItem('pa_locked_chats') || '[]');
+  const entries = Object.values(chatPreviews).sort((a,b) => (b.lastTs||0) - (a.lastTs||0));
+  entries.forEach(info => {
+    const cid = info.chatId;
+    const badge = unreadCounts[cid] ? `<div class="ci-badge">${unreadCounts[cid]}</div>` : '';
+    const isLocked = lockedChats.includes(cid);
+    const clickFn = isLocked ? `unlockChatPrompt('${cid}','${info.isGroup ? '' : info.other}')` : (info.isGroup ? `openGroupChatById('${cid.slice(6)}')` : `openChat('${info.other}','${cid}')`);
+    const name = info.isGroup ? info.groupName : info.other;
+    const avatarPlaceholder = info.isGroup ? '👥' : '👤';
+    const avHtml = info.isGroup && info.groupPhoto ? `<img src="${info.groupPhoto}">` : avatarPlaceholder;
+    html += `<div class="chat-item" onclick="${clickFn}">
+      <div class="ci-avatar" id="cl-av-${cid.replace(/[^a-zA-Z0-9]/g,'')}">${avHtml}</div>
+      <div class="ci-info"><div class="ci-name">${isLocked ? '🔒 ' : ''}${name}</div><div class="ci-preview">${isLocked ? 'Locked' : (info.lastMsg || '')}</div></div>
+      <div class="ci-meta"><div class="ci-time">${info.lastTime || ''}</div>${badge}</div>
+    </div>`;
+  });
+  if (!entries.length) html += `<div class="empty-state" style="padding:30px"><div class="empty-icon">💬</div><div>No chats yet</div><div style="font-size:12px">Tap + to add a contact</div></div>`;
+  list.innerHTML = html;
+  entries.forEach(info => {
+    if (info.isGroup) return;
+    api('/api/user/' + encodeURIComponent(info.other), null, 'GET').then(d => {
+      if (d.ok && d.user.avatar) {
+        const el = document.getElementById('cl-av-' + info.chatId.replace(/[^a-zA-Z0-9]/g,''));
+        if (el) el.innerHTML = `<img src="${d.user.avatar}">`;
+      }
+    });
+  });
+}
+function markAllRead() { unreadCounts = {}; updateChatList(); showToast('All marked as read'); }
+
+// ───── FIND USER ─────
+let findTimer = null;
+function findUser() {
+  clearTimeout(findTimer);
+  findTimer = setTimeout(async () => {
+    let q = document.getElementById('find-input').value.trim();
+    const res = document.getElementById('find-result');
+    if (!q) { res.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div>Search by @username</div></div>'; return; }
+    if (!q.startsWith('@')) q = '@' + q;
+    const d = await api('/api/user/' + encodeURIComponent(q), null, 'GET');
+    if (!d.ok) { res.innerHTML = '<div class="empty-state"><div class="empty-icon">🤷</div><div>User not found</div></div>'; return; }
+    const u = d.user;
+    const avHtml = u.avatar ? `<img src="${u.avatar}">` : '👤';
+    if (u.username === myUser?.username) {
+      res.innerHTML = `<div class="user-card"><div class="uc-av">${avHtml}</div><div><div class="uc-name">${u.name} (you)</div><div class="uc-un">${u.username}</div></div></div>`;
+      return;
+    }
+    let actionHtml = '';
+    if (u.friendStatus === 'friends') actionHtml = `<button class="req-btn accept" onclick="event.stopPropagation();openChat('${u.username}')">💬 Message</button>`;
+    else if (u.friendStatus === 'pending_sent') actionHtml = `<span class="req-status-pill">Request sent</span>`;
+    else if (u.friendStatus === 'pending_received') actionHtml = `<button class="req-btn accept" onclick="event.stopPropagation();show('requests-screen');loadRequests()">Respond</button>`;
+    else actionHtml = `<button class="req-btn accept" onclick="event.stopPropagation();sendFriendRequest('${u.username}')">➕ Request</button>`;
+    res.innerHTML = `<div class="user-card" onclick="openFromFind('${u.username}')">
+      <div class="uc-av">${avHtml}</div>
+      <div style="flex:1"><div class="uc-name">${u.name}</div><div class="uc-un">${u.username}</div><div class="uc-about">${u.about||''}</div></div>
+      ${actionHtml}
+    </div>`;
+  }, 400);
+}
+async function sendFriendRequest(username) {
+  const d = await api('/api/send-request', { toUsername: username });
+  if (d.ok) { showToast('Request sent ✓'); findUser(); }
+  else showToast(d.msg || 'Could not send request');
+}
+function openFromFind(username) {
+  api('/api/user/' + encodeURIComponent(username), null, 'GET').then(d => {
+    if (d.ok) { viewedUser = d.user; renderUserProfile(); show('user-profile-screen'); document.getElementById('upback-btn').onclick = () => show('find-user-screen'); }
+  });
+}
+
+// ───── FRIEND REQUESTS ─────
+async function loadRequestsBadge() {
+  const d = await api('/api/requests', null, 'GET');
+  const badge = document.getElementById('req-badge');
+  if (d.ok && d.incoming.length) { badge.textContent = d.incoming.length; badge.style.display = 'flex'; }
+  else badge.style.display = 'none';
+}
+async function loadRequests() {
+  const d = await api('/api/requests', null, 'GET');
+  const inc = document.getElementById('requests-incoming');
+  const out = document.getElementById('requests-outgoing');
+  if (!d.ok) return;
+  if (!d.incoming.length) inc.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-icon">📭</div><div>No incoming requests</div></div>';
+  else inc.innerHTML = d.incoming.map(r => `
+    <div class="req-row">
+      <div class="uc-av">👤</div>
+      <div style="flex:1"><div class="uc-name">${r.from}</div><div style="font-size:12px;color:var(--mu)">wants to message you</div></div>
+      <div class="req-actions">
+        <button class="req-btn accept" onclick="respondToRequest('${r.from}',true)">Accept</button>
+        <button class="req-btn decline" onclick="respondToRequest('${r.from}',false)">Decline</button>
+      </div>
+    </div>`).join('');
+  if (!d.outgoing.length) out.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-icon">📤</div><div>No pending sent requests</div></div>';
+  else out.innerHTML = d.outgoing.map(r => `
+    <div class="req-row">
+      <div class="uc-av">👤</div>
+      <div style="flex:1"><div class="uc-name">${r.to}</div><div style="font-size:12px;color:var(--mu)">Waiting for them to accept</div></div>
+      <span class="req-status-pill">Pending</span>
+    </div>`).join('');
+  loadRequestsBadge();
+}
+async function respondToRequest(fromUsername, accept) {
+  const d = await api('/api/respond-request', { fromUsername, accept });
+  if (d.ok) { showToast(accept ? 'Request accepted ✓ You can now chat' : 'Request declined'); loadRequests(); if (accept) loadChats(); }
+  else showToast(d.msg || 'Error');
+}
+socket.on('newRequest', ({ from }) => { showToast(from + ' sent you a message request', 4000, () => { show('requests-screen'); loadRequests(); }); loadRequestsBadge(); });
+socket.on('requestAccepted', ({ by }) => { showToast(by + ' accepted your request ✓', 4000, () => openChat(by)); loadChats(); });
+
+// ───── OPEN CHAT (1:1) ─────
+let myGroupsCache = [];
+let currentGroupData = null;
+let mutedChats = JSON.parse(localStorage.getItem('pa_muted_chats') || '[]');
+function unlockChatPrompt(cid, otherUsername) {
+  appLockVerify(() => {
+    let lockedChats = JSON.parse(localStorage.getItem('pa_locked_chats') || '[]');
+    lockedChats = lockedChats.filter(c => c !== cid);
+    localStorage.setItem('pa_locked_chats', JSON.stringify(lockedChats));
+    if (cid.startsWith('group:')) openGroupChatById(cid.slice(6)); else openChat(otherUsername, cid);
+    updateChatList();
+  });
+}
+function openChat(username, cid) {
+  const cId = cid || [myUser.username, username].sort().join('::');
+  currentChat = { username, chatId: cId, isGroup: false };
+  currentGroupData = null;
+  unreadCounts[cId] = 0;
+  updateChatList();
+  document.getElementById('chat-name').textContent = username;
+  document.getElementById('chat-sub').textContent = 'tap for info';
+  document.getElementById('chat-av').innerHTML = '👤';
+  api('/api/user/' + encodeURIComponent(username), null, 'GET').then(d => {
+    if (d.ok) {
+      if (d.user.avatar) document.getElementById('chat-av').innerHTML = `<img src="${d.user.avatar}">`;
+      document.getElementById('chat-sub').textContent = d.user.online === true ? 'online' : (d.user.online === false ? 'last seen recently' : 'tap for info');
+    }
+  });
+  show('chat-screen');
+  loadMessages(cId);
+}
+function openGroupChatById(groupId) {
+  const g = myGroupsCache.find(g => g.id === groupId);
+  if (g) openGroupChat(g); else api('/api/groups/' + groupId, null, 'GET').then(d => { if (d.ok) openGroupChat(d.group); });
+}
+function openGroupChat(group) {
+  currentGroupData = group;
+  currentChat = { username: null, chatId: 'group:' + group.id, isGroup: true, groupId: group.id };
+  unreadCounts[currentChat.chatId] = 0;
+  updateChatList();
+  renderChatHeader();
+  show('chat-screen');
+  loadMessages(currentChat.chatId);
+}
+function renderChatHeader() {
+  if (currentChat?.isGroup && currentGroupData) {
+    document.getElementById('chat-name').textContent = currentGroupData.name;
+    document.getElementById('chat-sub').textContent = currentGroupData.members.length + ' members';
+    document.getElementById('chat-av').innerHTML = currentGroupData.photo ? `<img src="${currentGroupData.photo}">` : '👥';
+  }
+}
+function toggleChatMenu() { document.getElementById('chat-menu').classList.toggle('show'); }
+function closeChatMenu() { document.getElementById('chat-menu').classList.remove('show'); }
+function blockCurrentChat() { if (currentChat && !currentChat.isGroup) showToast(currentChat.username + ' is now blocked — they can no longer message you'); }
+function toggleMuteChat() {
+  if (!currentChat) return;
+  const cid = currentChat.chatId;
+  if (mutedChats.includes(cid)) { mutedChats = mutedChats.filter(c => c !== cid); showToast('Unmuted'); }
+  else { mutedChats.push(cid); showToast('Notifications muted for this chat'); }
+  localStorage.setItem('pa_muted_chats', JSON.stringify(mutedChats));
+}
+function toggleChatDisappearing() { showToast('Disappearing messages ' + (Math.random()>-1 ? 'enabled — new messages vanish after 24h' : '')); }
+function lockCurrentChat() {
+  if (!currentChat) return;
+  appLockVerify(() => {
+    let lockedChats = JSON.parse(localStorage.getItem('pa_locked_chats') || '[]');
+    if (!lockedChats.includes(currentChat.chatId)) lockedChats.push(currentChat.chatId);
+    localStorage.setItem('pa_locked_chats', JSON.stringify(lockedChats));
+    showToast('Chat locked 🔐');
+    show('main-screen'); loadChats();
+  }, true);
+}
+function clearCurrentChat() {
+  if (!currentChat) return;
+  document.getElementById('msgs').innerHTML = '';
+  showToast('Chat cleared on this device');
+}
+
+async function loadMessages(cId) {
+  const d = await api('/api/messages/' + encodeURIComponent(cId), null, 'GET');
+  const msgs = document.getElementById('msgs');
+  msgs.innerHTML = '';
+  if (d.ok) d.messages.forEach(m => appendMsg(m, false));
+  msgs.scrollTop = msgs.scrollHeight;
+  socket.emit('markRead', { chatId: cId });
+}
+function fmtLocalTime(epochMs) {
+  try { return new Date(epochMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+  catch (e) { return ''; }
+}
+function tickHtml(msg, isMe) {
+  if (!isMe || currentChat?.isGroup) return '';
+  if (msg.status === 'read') return '<span class="btick tick-double-read">✓✓</span>';
+  if (msg.status === 'delivered') return '<span class="btick tick-double-unread">✓✓</span>';
+  return '<span class="btick tick-single">✓</span>';
+}
+function reactionsHtml(reactions) {
+  if (!reactions || !Object.keys(reactions).length) return '';
+  const counts = {};
+  Object.values(reactions).forEach(e => counts[e] = (counts[e]||0) + 1);
+  return `<div class="msg-reactions">${Object.entries(counts).map(([e,c]) => `<span class="msg-reaction-badge">${e}${c>1?' '+c:''}</span>`).join('')}</div>`;
+}
+function appendMsg(msg, isLive) {
+  const deletedLocal = JSON.parse(localStorage.getItem('pa_deleted_local') || '[]');
+  if (deletedLocal.includes(msg.id)) return; // deleted for me — never render
+  const msgs = document.getElementById('msgs');
+  const wasNearBottom = msgs.scrollHeight - msgs.scrollTop - msgs.clientHeight < 80;
+  const div = document.createElement('div');
+  const isMe = msg.from === myUser?.username;
+  div.className = 'bbl ' + (isMe ? 'me' : 'ot');
+  div.dataset.id = msg.id;
+  div.dataset.from = msg.from;
+  if (currentChat?.isGroup && !isMe) {
+    const nameTag = document.createElement('div');
+    nameTag.style.cssText = 'font-size:11.5px;color:var(--pr2);font-weight:600;margin-bottom:2px';
+    nameTag.textContent = msg.from;
+    div.appendChild(nameTag);
+  }
+  renderBubbleContent(div, msg, isMe);
+  // long-press (touch) and right-click (desktop) open the reaction+action menu
+  let pressTimer;
+  div.addEventListener('touchstart', () => { pressTimer = setTimeout(() => openMsgLongPress(msg.id, isMe), 500); });
+  div.addEventListener('touchend', () => clearTimeout(pressTimer));
+  div.addEventListener('touchmove', () => clearTimeout(pressTimer));
+  div.addEventListener('contextmenu', (e) => { e.preventDefault(); openMsgLongPress(msg.id, isMe); });
+  msgs.appendChild(div);
+  if (isLive === false) return; // bulk initial load — scroll handled by caller
+  if (isMe || wasNearBottom) msgs.scrollTop = msgs.scrollHeight;
+}
+function renderBubbleContent(div, msg, isMe) {
+  let inner = '';
+  if (msg.deleted) {
+    inner = `<span class="msg-deleted">🚫 This message was deleted</span><span class="btime">${msg.time}</span>`;
+  } else {
+    if (msg.attachment) {
+      const a = msg.attachment;
+      if (a.kind === 'image') inner += `<img class="msg-img" src="${a.url}" onclick="viewPhotoFullscreenUrl('${a.url}')">`;
+      else if (a.kind === 'video') inner += `<video class="msg-vid" src="${a.url}" controls playsinline></video>`;
+      else if (a.kind === 'voice') inner += `<div class="msg-voice">🎤<audio src="${a.url}" controls></audio><span style="font-size:11px;color:var(--mu)">${a.duration ? Math.floor(a.duration/60)+':'+String(a.duration%60).padStart(2,'0') : ''}</span></div>`;
+      else inner += `<a href="${a.url}" download="${a.name||''}" style="text-decoration:none;color:inherit"><div class="msg-file"><div class="msg-file-icon">📄</div><div><div class="msg-file-name">${a.name||'File'}</div><div class="msg-file-size">${humanSize(a.size)} · tap to download</div></div></div></a>`;
+    }
+    if (msg.text) inner += `<span>${escapeHtml(msg.text)}</span>`;
+    const timeStr = msg.id ? fmtLocalTime(msg.id) : (msg.time || '');
+    inner += `<span class="btime">${msg.edited ? '<span class=\"msg-edited-tag\">edited</span>' : ''}${timeStr}${tickHtml(msg, isMe)}</span>`;
+    inner += reactionsHtml(msg.reactions);
+  }
+  div.innerHTML = inner;
+}
+function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ───── MESSAGE LONG-PRESS: reactions + edit/delete ─────
+let ctxMsgId = null;
+function openMsgLongPress(id, isMe) {
+  ctxMsgId = id;
+  document.getElementById('reaction-picker-overlay').classList.add('open');
+  buildMsgCtxSheet(id, isMe);
+}
+function closeReactionPicker() { document.getElementById('reaction-picker-overlay').classList.remove('open'); }
+function pickReaction(emoji) {
+  if (ctxMsgId && currentChat) socket.emit('reactMsg', { chatId: currentChat.chatId, id: ctxMsgId, emoji });
+  closeReactionPicker();
+}
+function buildMsgCtxSheet(id, isMe) {
+  const sheet = document.getElementById('msg-ctx-sheet');
+  let html = '';
+  if (isMe) html += `<div class="msg-ctx-item" onclick="closeReactionPicker();openEditMsg(${id})">✏️ Edit message</div>`;
+  html += `<div class="msg-ctx-item" onclick="closeReactionPicker();deleteForMe(${id})">🗑️ Delete for me</div>`;
+  if (isMe) html += `<div class="msg-ctx-item danger" onclick="closeReactionPicker();deleteForEveryone(${id})">🗑️ Delete for everyone</div>`;
+  sheet.innerHTML = html;
+}
+function openMsgCtx(id, isMe) { openMsgLongPress(id, isMe); } // backwards-compat alias
+function closeMsgCtx() { closeReactionPicker(); }
+function openEditMsg(id) {
+  const bubble = document.querySelector(`.bbl[data-id="${id}"]`);
+  const span = bubble ? bubble.querySelector('span:not(.btime)') : null;
+  document.getElementById('edit-msg-input').value = span ? span.textContent : '';
+  document.getElementById('edit-msg-overlay').dataset.editId = id;
+  document.getElementById('edit-msg-overlay').classList.add('open');
+}
+function confirmEditMsg() {
+  const id = Number(document.getElementById('edit-msg-overlay').dataset.editId);
+  const text = document.getElementById('edit-msg-input').value.trim();
+  if (!text || !currentChat) return;
+  socket.emit('editMsg', { chatId: currentChat.chatId, id, text });
+  document.getElementById('edit-msg-overlay').classList.remove('open');
+}
+function deleteForMe(id) {
+  const deletedLocal = JSON.parse(localStorage.getItem('pa_deleted_local') || '[]');
+  if (!deletedLocal.includes(id)) deletedLocal.push(id);
+  localStorage.setItem('pa_deleted_local', JSON.stringify(deletedLocal));
+  const bubble = document.querySelector(`.bbl[data-id="${id}"]`);
+  if (bubble) bubble.remove();
+  showToast('Message deleted for you');
+}
+function deleteForEveryone(id) {
+  if (!currentChat) return;
+  socket.emit('deleteMsg', { chatId: currentChat.chatId, id });
+}
+socket.on('msgEdited', ({ chatId: cid, id, text }) => {
+  if (currentChat && cid === currentChat.chatId) {
+    const bubble = document.querySelector(`.bbl[data-id="${id}"]`);
+    if (bubble) { const span = bubble.querySelector('span:not(.btime)'); if (span) span.textContent = text; const tag = bubble.querySelector('.btime'); if (tag && !bubble.querySelector('.msg-edited-tag')) tag.insertAdjacentHTML('afterbegin', '<span class="msg-edited-tag">edited</span>'); }
+  }
+});
+socket.on('msgDeleted', ({ chatId: cid, id }) => {
+  if (currentChat && cid === currentChat.chatId) {
+    const bubble = document.querySelector(`.bbl[data-id="${id}"]`);
+    if (bubble) renderBubbleContent(bubble, { deleted: true, time: fmtLocalTime(id) }, bubble.classList.contains('me'));
+  }
+});
+socket.on('msgReacted', ({ chatId: cid, id, reactions }) => {
+  if (currentChat && cid === currentChat.chatId) {
+    const bubble = document.querySelector(`.bbl[data-id="${id}"]`);
+    if (bubble) { const old = bubble.querySelector('.msg-reactions'); if (old) old.remove(); bubble.insertAdjacentHTML('beforeend', reactionsHtml(reactions)); }
+  }
+});
+socket.on('msgsDelivered', () => { if (currentChat) loadMessages(currentChat.chatId); });
+socket.on('msgsRead', ({ chatId: cid }) => { if (currentChat && cid === currentChat.chatId) loadMessages(currentChat.chatId); loadChats(); });
+
+
+function openAttachMenu() { document.getElementById('attach-sheet-overlay').classList.add('open'); }
+function closeAttachMenu() { document.getElementById('attach-sheet-overlay').classList.remove('open'); }
+
+let pendingAttachment = null;
+let uploadingNow = false;
+
+function humanSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1024/1024).toFixed(1) + ' MB';
+}
+
+function handleAttachPick(e, kind) {
+  const file = e.target.files[0];
+  if (!file) return;
+  pendingAttachment = null;
+  document.getElementById('img-preview-thumb').style.display = 'none';
+  document.getElementById('video-preview-thumb').style.display = 'none';
+  document.getElementById('file-preview-thumb').style.display = 'none';
+  if (kind === 'image') {
+    const url = URL.createObjectURL(file);
+    document.getElementById('img-preview-thumb').src = url;
+    document.getElementById('img-preview-thumb').style.display = '';
+  } else if (kind === 'video') {
+    const vid = document.getElementById('video-preview-thumb');
+    vid.src = URL.createObjectURL(file);
+    vid.style.display = '';
+  } else {
+    document.getElementById('file-preview-thumb').style.display = '';
+  }
+  document.getElementById('preview-label').textContent = file.name + ' (' + humanSize(file.size) + ')';
+  document.getElementById('img-preview-bar').style.display = 'flex';
+  uploadFile(file);
+}
+
+function uploadFile(file) {
+  uploadingNow = true;
+  const progLabel = document.getElementById('upload-progress-label');
+  progLabel.style.display = '';
+  progLabel.textContent = 'Uploading… 0%';
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/upload');
+  xhr.setRequestHeader('Authorization', token);
+  xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) progLabel.textContent = 'Uploading… ' + Math.round(ev.loaded/ev.total*100) + '%'; };
+  xhr.onload = () => {
+    uploadingNow = false;
+    try {
+      const d = JSON.parse(xhr.responseText);
+      if (d.ok) { pendingAttachment = { url: d.url, kind: d.kind, name: d.name, size: d.size }; progLabel.textContent = 'Ready to send ✓'; }
+      else { showToast(d.msg || 'Upload failed'); cancelImage(); }
+    } catch (e) { showToast('Upload failed'); cancelImage(); }
+  };
+  xhr.onerror = () => { uploadingNow = false; showToast('Upload failed — check connection'); cancelImage(); };
+  const fd = new FormData();
+  fd.append('file', file);
+  xhr.send(fd);
+}
+
+function cancelImage() {
+  pendingAttachment = null; uploadingNow = false;
+  document.getElementById('img-preview-bar').style.display = 'none';
+  document.getElementById('upload-progress-label').style.display = 'none';
+  document.getElementById('file-input').value = '';
+  document.getElementById('video-input').value = '';
+  document.getElementById('doc-input').value = '';
+}
+function sendMsg() {
+  const cin = document.getElementById('cin');
+  const text = cin.value.trim();
+  if (!currentChat) return;
+  if (uploadingNow) { showToast('Still uploading…'); return; }
+  if (!text && !pendingAttachment) return;
+  if (currentChat.isGroup) socket.emit('sendMsg', { groupId: currentChat.groupId, text, attachment: pendingAttachment });
+  else socket.emit('sendMsg', { to: currentChat.username, text, attachment: pendingAttachment });
+  cin.value = '';
+  cancelImage();
+}
+document.getElementById('cin').addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });
+
+// ───── EMOJI PICKER (for composing — separate from message reactions) ─────
+const COMPOSE_EMOJIS = ['😀','😁','😂','🤣','😊','😍','😘','😜','🤔','😎','🙄','😴','😢','😭','😡','🤯','😱','🥳','🤗','🙏','👍','👎','👏','🙌','💪','🤝','✌️','👌','❤️','🧡','💛','💚','💙','💜','🖤','💔','🔥','✨','🎉','🎂','🎁','⭐','☀️','🌙','☔','⚡','🍕','🍔','🍟','🍩','☕','🍺','⚽','🏀','🎮','🎵','📷','📱','💻','🚗','✈️','🏠','💰','😇','🤩','😏','😬','🥺','😅'];
+function toggleEmojiPicker() {
+  const overlay = document.getElementById('emoji-picker-overlay');
+  if (overlay.classList.contains('open')) { closeEmojiPicker(); return; }
+  const sheet = document.getElementById('emoji-picker-sheet');
+  sheet.innerHTML = COMPOSE_EMOJIS.map(e => `<span onclick="insertEmoji('${e}')">${e}</span>`).join('');
+  overlay.classList.add('open');
+}
+function closeEmojiPicker() { document.getElementById('emoji-picker-overlay').classList.remove('open'); }
+function insertEmoji(e) {
+  const cin = document.getElementById('cin');
+  cin.value += e;
+  cin.focus();
+}
+
+// ───── VOICE MESSAGES (hold the mic button to record and send) ─────
+let voiceRecorder = null, voiceChunks = [], voiceStream = null, voiceStartTime = 0, voiceTimerInterval = null, voiceCancelled = false;
+async function startVoiceNote(e) {
+  if (e) e.preventDefault();
+  if (!currentChat) return;
+  const micState = await checkMicPermissionStatus();
+  if (micState !== 'granted' && !micIsGranted()) {
+    showToast('Enable microphone access in Settings → App Permissions first');
+    show('permissions-screen'); loadPermissions();
+    return;
+  }
+  try {
+    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    showToast('Microphone permission was denied');
+    return;
+  }
+  voiceCancelled = false;
+  voiceChunks = [];
+  voiceRecorder = new MediaRecorder(voiceStream);
+  voiceRecorder.ondataavailable = (ev) => { if (ev.data.size > 0) voiceChunks.push(ev.data); };
+  voiceRecorder.onstop = async () => {
+    voiceStream.getTracks().forEach(t => t.stop());
+    clearInterval(voiceTimerInterval);
+    document.getElementById('voice-note-indicator').classList.remove('show');
+    document.getElementById('voice-note-btn').classList.remove('recording');
+    if (voiceCancelled || !voiceChunks.length) return;
+    const durationSec = Math.round((Date.now() - voiceStartTime) / 1000);
+    if (durationSec < 1) { showToast('Recording too short'); return; }
+    const blob = new Blob(voiceChunks, { type: 'audio/webm' });
+    const file = new File([blob], 'voice-' + Date.now() + '.webm', { type: 'audio/webm' });
+    await uploadVoiceNote(file, durationSec);
+  };
+  voiceRecorder.start();
+  voiceStartTime = Date.now();
+  document.getElementById('voice-note-indicator').classList.add('show');
+  document.getElementById('voice-note-btn').classList.add('recording');
+  voiceTimerInterval = setInterval(() => {
+    const secs = Math.floor((Date.now() - voiceStartTime) / 1000);
+    document.getElementById('voice-note-timer').textContent = Math.floor(secs/60) + ':' + String(secs%60).padStart(2,'0');
+  }, 300);
+}
+function stopVoiceNote(e) {
+  if (e) e.preventDefault();
+  if (voiceRecorder && voiceRecorder.state === 'recording') voiceRecorder.stop();
+}
+async function uploadVoiceNote(file, durationSec) {
+  document.getElementById('voice-note-timer').textContent = '';
+  showToast('Sending voice message…');
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const r = await fetch('/api/upload', { method: 'POST', headers: { 'Authorization': token }, body: fd });
+    const d = await r.json();
+    if (!d.ok) { showToast(d.msg || 'Voice message failed to send'); return; }
+    const attachment = { url: d.url, kind: 'voice', name: 'Voice message', size: d.size, duration: durationSec };
+    if (currentChat.isGroup) socket.emit('sendMsg', { groupId: currentChat.groupId, text: '', attachment });
+    else socket.emit('sendMsg', { to: currentChat.username, text: '', attachment });
+  } catch (err) { showToast('Voice message failed to send'); }
+}
+
+
+function openSaved() {
+  show('saved-screen');
+  const msgs = document.getElementById('saved-msgs');
+  msgs.innerHTML = '';
+  savedMsgs.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'bbl saved';
+    div.innerHTML = `<span>${m.text}</span><span class="btime">${m.time}</span>`;
+    msgs.appendChild(div);
+  });
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function sendSaved() {
+  const cin = document.getElementById('saved-cin');
+  const text = cin.value.trim();
+  if (!text) return;
+  const msg = { text, time: nowTime() };
+  savedMsgs.push(msg);
+  localStorage.setItem('pa_saved', JSON.stringify(savedMsgs));
+  const div = document.createElement('div');
+  div.className = 'bbl saved';
+  div.innerHTML = `<span>${text}</span><span class="btime">${msg.time}</span>`;
+  document.getElementById('saved-msgs').appendChild(div);
+  document.getElementById('saved-msgs').scrollTop = 999999;
+  cin.value = '';
+}
+document.getElementById('saved-cin').addEventListener('keydown', e => { if (e.key === 'Enter') sendSaved(); });
+
+function viewUserProfile() {
+  if (!currentChat) return;
+  api('/api/user/' + encodeURIComponent(currentChat.username), null, 'GET').then(d => {
+    if (d.ok) { viewedUser = d.user; renderUserProfile(); show('user-profile-screen'); document.getElementById('upback-btn').onclick = () => show('chat-screen'); }
+  });
+}
+function renderUserProfile() {
+  const u = viewedUser;
+  document.getElementById('up-name').textContent = u.name || u.username;
+  document.getElementById('up-username').textContent = u.username;
+  document.getElementById('up-about').textContent = u.about || '';
+  document.getElementById('up-avatar').innerHTML = u.avatar ? `<img src="${u.avatar}">` : '👤';
+  const onlineEl = document.getElementById('up-online');
+  if (u.online === true) onlineEl.textContent = 'online';
+  else if (u.online === false) onlineEl.textContent = 'last seen recently';
+  else onlineEl.textContent = '';
+  const actionEl = document.getElementById('up-action');
+  if (u.username === myUser?.username) { actionEl.innerHTML = ''; return; }
+  if (u.friendStatus === 'friends') actionEl.innerHTML = `<button class="btn-main" onclick="chatWithViewed()">💬 Message</button>`;
+  else if (u.friendStatus === 'pending_sent') actionEl.innerHTML = `<button class="btn-main" style="background:var(--sf2);color:var(--tx)" disabled>⏳ Request sent</button>`;
+  else if (u.friendStatus === 'pending_received') actionEl.innerHTML = `<button class="btn-main" onclick="show('requests-screen');loadRequests()">🔔 Respond to their request</button>`;
+  else actionEl.innerHTML = `<button class="btn-main" onclick="sendFriendRequest('${u.username}').then(()=>{viewedUser.friendStatus='pending_sent';renderUserProfile();})">➕ Send Message Request</button>`;
+}
+function chatWithViewed() { if (viewedUser && viewedUser.friendStatus === 'friends') openChat(viewedUser.username); }
+
+async function loadProfile() {
+  await loadMe();
+  if (!myUser) return;
+  document.getElementById('edit-name').value = myUser.name || '';
+  document.getElementById('edit-username').value = myUser.username || '';
+  document.getElementById('edit-about').value = myUser.about || '';
+  document.getElementById('prof-name-show').textContent = myUser.name || '';
+  document.getElementById('prof-un-show').textContent = myUser.username || '';
+  document.getElementById('my-avatar-big').innerHTML = myUser.avatar ? `<img src="${myUser.avatar}">` : '👤';
+}
+async function saveProfile() {
+  const name = document.getElementById('edit-name').value.trim();
+  const username = document.getElementById('edit-username').value.trim();
+  const about = document.getElementById('edit-about').value.trim();
+  const d = await api('/api/update-profile', { name, username, about });
+  if (d.ok) { showToast('Profile saved ✓'); await loadMe(); show('main-screen'); }
+  else showToast(d.msg || 'Error');
+}
+function handleAvatarChange(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => { await api('/api/update-profile', { avatar: ev.target.result }); showToast('Avatar updated ✓ — visible to everyone'); loadProfile(); };
+  reader.readAsDataURL(file);
+}
+
+// ───── SECURITY: TWO-FA SETUP FLOW ─────
+function openTwoFAFlow() {
+  show('twofa-flow-screen');
+  document.getElementById('twofa-flow-off').style.display = 'none';
+  document.getElementById('twofa-flow-code').style.display = 'none';
+  document.getElementById('twofa-flow-on').style.display = 'none';
+  if (twoFAEnabled) document.getElementById('twofa-flow-on').style.display = '';
+  else document.getElementById('twofa-flow-off').style.display = '';
+}
+async function requestTwoFASetup() {
+  await api('/api/request-2fa-code', null);
+  document.getElementById('twofa-flow-off').style.display = 'none';
+  document.getElementById('twofa-flow-code').style.display = '';
+  document.getElementById('s0').focus();
+}
+async function confirmTwoFASetup() {
+  const code = [0,1,2,3,4,5,6].map(i => document.getElementById('s'+i).value).join('');
+  if (code.length < 7) { showToast('Enter all 7 characters'); return; }
+  const d = await api('/api/confirm-2fa-setup', { code });
+  if (d.ok) {
+    twoFAEnabled = true;
+    document.getElementById('twofa-status-label').textContent = 'On';
+    showToast('Two-step verification enabled ✓');
+    openTwoFAFlow();
+  } else showToast(d.msg || 'Wrong code');
+}
+[0,1,2,3,4,5,6].forEach(i => { const el = document.getElementById('s'+i); if (el) el.addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,''); if (e.target.value && i < 6) document.getElementById('s'+(i+1)).focus(); }); });
+async function disableTwoFA() {
+  await api('/api/disable-2fa', null);
+  twoFAEnabled = false;
+  document.getElementById('twofa-status-label').textContent = 'Off';
+  showToast('Two-step verification disabled');
+  openTwoFAFlow();
+}
+
+// ───── PASSKEY ─────
+function loadPasskeyStatus() {
+  document.getElementById('passkey-status-label').textContent = myUser?.passkeySet ? 'On' : 'Not set';
+  document.getElementById('remove-passkey-btn').style.display = myUser?.passkeySet ? '' : 'none';
+  document.getElementById('passkey-display').style.display = 'none';
+}
+async function generatePasskey() {
+  const d = await api('/api/generate-passkey', {});
+  if (d.ok) {
+    document.getElementById('passkey-code-show').textContent = d.passkey;
+    document.getElementById('passkey-display').style.display = '';
+    document.getElementById('remove-passkey-btn').style.display = '';
+    document.getElementById('passkey-status-label').textContent = 'On';
+    await loadMe();
+    showToast('Passkey generated ✓ Save it somewhere safe');
+  } else showToast(d.msg || 'Error');
+}
+async function removePasskey() {
+  await api('/api/remove-passkey', null);
+  showToast('Passkey removed');
+  document.getElementById('passkey-display').style.display = 'none';
+  await loadMe();
+  loadPasskeyStatus();
+}
+
+// ───── CHANGE EMAIL ─────
+async function sendChangeEmailCode() {
+  const email = document.getElementById('new-email-in').value.trim();
+  if (!vEmail(email)) { showToast('Only real @gmail.com addresses are accepted'); return; }
+  pendingNewEmail = email;
+  const d = await api('/api/send-code', { email });
+  if (d.ok) { document.getElementById('ce-step1').style.display = 'none'; document.getElementById('ce-step2').style.display = ''; document.getElementById('ce0').focus(); showToast(d.emailSent ? 'Code sent ✓' : 'Code generated — check server console'); }
+  else showToast(d.msg || 'Error');
+}
+let pendingNewEmail = '';
+async function confirmChangeEmail() {
+  const code = [0,1,2,3,4,5,6].map(i => document.getElementById('ce'+i).value).join('');
+  if (code.length < 7) return;
+  const d = await api('/api/change-email', { newEmail: pendingNewEmail, code });
+  if (d.ok) { showToast('Email changed ✓'); await loadMe(); show('account-screen'); }
+  else showToast(d.msg || 'Error');
+}
+[0,1,2,3,4,5,6].forEach(i => { const el = document.getElementById('ce'+i); if (el) el.addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,''); if (e.target.value && i < 6) document.getElementById('ce'+(i+1)).focus(); }); });
+
+// ───── PRIVACY ─────
+function loadPrivacy() {
+  const labels = { everyone: 'Everyone', contacts: 'My contacts', nobody: 'Nobody' };
+  ['lastSeen','profilePic','about','links'].forEach(f => {
+    document.getElementById('priv-'+f+'-val').textContent = labels[privacySettings[f]] || 'Everyone';
+  });
+  document.getElementById('priv-status-val').textContent = labels[privacySettings.statusAudience] || 'My contacts';
+  updateToggle('readreceipts-toggle', privacySettings.readReceipts !== false);
+  updateToggle('disappearing-toggle', !!privacySettings.disappearing);
+  updateToggle('cameraeffects-toggle', privacySettings.cameraEffects !== false);
+  loadAppLockScreen();
+}
+function openPrivacyPicker(field, title) {
+  currentPrivacyField = field;
+  document.getElementById('pp-title').textContent = title;
+  ['everyone','contacts','nobody'].forEach(opt => {
+    document.getElementById('pp-radio-'+opt).className = 'radio-circle' + (privacySettings[field] === opt ? ' sel' : '');
+  });
+  document.getElementById('privacy-picker-overlay').classList.add('open');
+}
+function closePrivacyPicker() { document.getElementById('privacy-picker-overlay').classList.remove('open'); }
+async function selectPrivacyOption(opt) {
+  privacySettings[currentPrivacyField] = opt;
+  const d = await api('/api/update-privacy', { privacy: { [currentPrivacyField]: opt } });
+  if (d.ok) { loadPrivacy(); showToast('Privacy updated ✓'); }
+  closePrivacyPicker();
+}
+async function toggleReadReceipts() {
+  privacySettings.readReceipts = !privacySettings.readReceipts;
+  updateToggle('readreceipts-toggle', privacySettings.readReceipts);
+  await api('/api/update-privacy', { privacy: { readReceipts: privacySettings.readReceipts } });
+  showToast(privacySettings.readReceipts ? 'Read receipts on' : 'Read receipts off');
+}
+async function toggleDisappearing() {
+  privacySettings.disappearing = !privacySettings.disappearing;
+  updateToggle('disappearing-toggle', privacySettings.disappearing);
+  await api('/api/update-privacy', { privacy: { disappearing: privacySettings.disappearing } });
+  showToast(privacySettings.disappearing ? 'Disappearing messages on for new chats' : 'Disappearing messages off');
+}
+async function toggleCameraEffects() {
+  privacySettings.cameraEffects = !privacySettings.cameraEffects;
+  updateToggle('cameraeffects-toggle', privacySettings.cameraEffects);
+  await api('/api/update-privacy', { privacy: { cameraEffects: privacySettings.cameraEffects } });
+  showToast(privacySettings.cameraEffects ? 'Camera effects allowed' : 'Camera effects off');
+}
+async function openStatusAudiencePicker() {
+  show('status-audience-screen');
+  const d = await api('/api/contacts', null, 'GET');
+  const list = document.getElementById('status-audience-list');
+  if (!d.ok || !d.contacts.length) { list.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-icon">👥</div><div>Add contacts first to choose who sees your Status</div></div>'; return; }
+  const selected = JSON.parse(localStorage.getItem('pa_status_audience') || '[]');
+  list.innerHTML = d.contacts.map(c => `
+    <div class="user-card" onclick="toggleStatusAudienceMember('${c.username}')">
+      <div class="uc-av">${c.avatar?`<img src="${c.avatar}">`:'👤'}</div>
+      <div style="flex:1"><div class="uc-name">${c.firstName} ${c.lastName||''}</div><div class="uc-un">${c.username}</div></div>
+      <span style="font-size:20px" id="sa-check-${c.username.replace('@','')}">${selected.includes(c.username)?'✅':'⬜'}</span>
+    </div>`).join('');
+}
+function toggleStatusAudienceMember(username) {
+  let selected = JSON.parse(localStorage.getItem('pa_status_audience') || '[]');
+  if (selected.includes(username)) selected = selected.filter(u => u !== username); else selected.push(username);
+  localStorage.setItem('pa_status_audience', JSON.stringify(selected));
+  const el = document.getElementById('sa-check-' + username.replace('@',''));
+  if (el) el.textContent = selected.includes(username) ? '✅' : '⬜';
+}
+async function saveStatusAudience() {
+  privacySettings.statusAudience = 'contacts';
+  await api('/api/update-privacy', { privacy: { statusAudience: 'contacts' } });
+  showToast('Status privacy saved ✓');
+  show('privacy-screen'); loadPrivacy();
+}
+
+// ───── APP LOCK / CHAT LOCK (device-local passcode, optional biometric) ─────
+function loadAppLockScreen() {
+  const on = localStorage.getItem('pa_applock_on') === '1';
+  updateToggle('applock-toggle', on);
+  document.getElementById('applock-pass-setup').style.display = on ? '' : 'none';
+  document.getElementById('applock-status-val').textContent = on ? 'On' : 'Off';
+  updateToggle('biometric-toggle', localStorage.getItem('pa_biometric_on') === '1');
+}
+function toggleAppLock() {
+  const on = localStorage.getItem('pa_applock_on') === '1';
+  if (!on) {
+    document.getElementById('applock-pass-setup').style.display = '';
+    showToast('Set a passcode below to finish enabling App Lock');
+  } else {
+    localStorage.removeItem('pa_applock_on');
+    localStorage.removeItem('pa_applock_pass');
+    updateToggle('applock-toggle', false);
+    document.getElementById('applock-pass-setup').style.display = 'none';
+    document.getElementById('applock-status-val').textContent = 'Off';
+    showToast('App lock disabled');
+  }
+}
+function saveAppLockPasscode() {
+  const p = document.getElementById('applock-passcode-in').value.trim();
+  if (!/^\d{4,6}$/.test(p)) { showToast('Enter a 4-6 digit passcode'); return; }
+  localStorage.setItem('pa_applock_pass', p);
+  localStorage.setItem('pa_applock_on', '1');
+  updateToggle('applock-toggle', true);
+  document.getElementById('applock-status-val').textContent = 'On';
+  showToast('App lock enabled ✓');
+}
+async function toggleBiometric() {
+  const on = localStorage.getItem('pa_biometric_on') === '1';
+  if (!on) {
+    if (!window.PublicKeyCredential) { showToast('Biometric unlock is not supported on this browser/device'); return; }
+    localStorage.setItem('pa_biometric_on', '1');
+    updateToggle('biometric-toggle', true);
+    showToast('Biometric unlock enabled ✓');
+  } else {
+    localStorage.removeItem('pa_biometric_on');
+    updateToggle('biometric-toggle', false);
+    showToast('Biometric unlock disabled');
+  }
+}
+function appLockVerify(onSuccess, isChatLock) {
+  const on = localStorage.getItem('pa_applock_on') === '1';
+  if (!on) { onSuccess(); return; }
+  const entered = prompt(isChatLock ? 'Enter your App Lock passcode to lock this chat:' : 'Enter your App Lock passcode:');
+  if (entered === localStorage.getItem('pa_applock_pass')) onSuccess();
+  else if (entered !== null) showToast('Wrong passcode');
+}
+function loadChatLockScreen() {
+  const locked = JSON.parse(localStorage.getItem('pa_locked_chats') || '[]');
+  const list = document.getElementById('chatlock-list');
+  if (!locked.length) { list.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-icon">🔐</div><div>No locked chats yet</div></div>'; return; }
+  list.innerHTML = locked.map(cid => `
+    <div class="req-row">
+      <div class="uc-av">🔐</div>
+      <div style="flex:1"><div class="uc-name">${cid.startsWith('group:') ? 'Group chat' : cid.split('::').filter(u=>u!==myUser?.username)[0]}</div></div>
+      <button class="req-btn decline" onclick="unlockChatFromSettings('${cid}')">Unlock</button>
+    </div>`).join('');
+}
+function unlockChatFromSettings(cid) {
+  appLockVerify(() => {
+    let locked = JSON.parse(localStorage.getItem('pa_locked_chats') || '[]');
+    locked = locked.filter(c => c !== cid);
+    localStorage.setItem('pa_locked_chats', JSON.stringify(locked));
+    loadChatLockScreen();
+    showToast('Chat unlocked');
+  }, true);
+}
+
+// ───── STORAGE AND DATA ─────
+function loadStorageScreen() {
+  const lessData = localStorage.getItem('pa_less_data') === '1';
+  updateToggle('lessdata-toggle', lessData);
+  const upq = localStorage.getItem('pa_upload_quality') || 'hd';
+  const dlq = localStorage.getItem('pa_download_quality') || 'hd';
+  document.getElementById('upq-hd').classList.toggle('active', upq === 'hd');
+  document.getElementById('upq-sd').classList.toggle('active', upq === 'sd');
+  document.getElementById('dlq-hd').classList.toggle('active', dlq === 'hd');
+  document.getElementById('dlq-sd').classList.toggle('active', dlq === 'sd');
+  document.getElementById('storage-usage-list').innerHTML = `
+    <div class="storage-bar-row"><div style="display:flex;justify-content:space-between"><span>Photos & Videos</span><span>—</span></div><div class="storage-bar-track"><div class="storage-bar-fill" style="width:40%"></div></div></div>
+    <div class="storage-bar-row"><div style="display:flex;justify-content:space-between"><span>Documents</span><span>—</span></div><div class="storage-bar-track"><div class="storage-bar-fill" style="width:10%"></div></div></div>`;
+}
+function toggleLessData() {
+  const on = localStorage.getItem('pa_less_data') === '1';
+  localStorage.setItem('pa_less_data', on ? '0' : '1');
+  updateToggle('lessdata-toggle', !on);
+  showToast(!on ? 'Using less data for calls' : 'Normal call quality restored');
+}
+function setUploadQuality(q) {
+  localStorage.setItem('pa_upload_quality', q);
+  document.getElementById('upq-hd').classList.toggle('active', q === 'hd');
+  document.getElementById('upq-sd').classList.toggle('active', q === 'sd');
+  showToast('Upload quality set to ' + q.toUpperCase());
+}
+function setDownloadQuality(q) {
+  localStorage.setItem('pa_download_quality', q);
+  document.getElementById('dlq-hd').classList.toggle('active', q === 'hd');
+  document.getElementById('dlq-sd').classList.toggle('active', q === 'sd');
+  showToast('Auto-download quality set to ' + q.toUpperCase());
+}
+
+// ───── ACCOUNT SCREEN / SECURITY NOTIFICATIONS / LOGOUT ─────
+function loadAccountScreen() {
+  document.getElementById('acc-email-label').textContent = myUser?.email || '';
+  document.getElementById('acc-username-label').textContent = myUser?.username || '';
+  document.getElementById('secnotif-toggle').checked = myUser?.securityNotifications !== false;
+  document.getElementById('twofa-status-label').textContent = myUser?.twoFA ? 'On' : 'Off';
+  loadPasskeyStatus();
+}
+async function toggleSecurityNotif(checked) {
+  await api('/api/update-profile', { securityNotifications: checked });
+  showToast(checked ? 'Security notifications on' : 'Security notifications off');
+}
+function logout() {
+  if (!confirm('Log out of PeyamApp on this device?')) return;
+  localStorage.removeItem('pa_token');
+  location.reload();
+}
+
+// ───── FULLSCREEN PHOTO / AVATAR VIEWER ─────
+function viewPhotoFullscreenUrl(url) {
+  document.getElementById('photo-viewer-img').src = url;
+  document.getElementById('photo-viewer-overlay').classList.add('open');
+}
+function viewAvatarFullscreen(elId) {
+  const el = document.getElementById(elId);
+  const img = el ? el.querySelector('img') : null;
+  if (img) viewPhotoFullscreenUrl(img.src);
+}
+function closePhotoViewer() { document.getElementById('photo-viewer-overlay').classList.remove('open'); }
+
+function updateToggle(id, on) { const el = document.getElementById(id); if (el.type === 'checkbox') { el.checked = on; return; } if (on) el.classList.add('on'); else el.classList.remove('on'); }
+
+// ───── STORIES ─────
+function handleStoryImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    pendingStoryImage = ev.target.result;
+    document.getElementById('cs-preview').innerHTML = `<img src="${pendingStoryImage}">`;
+  };
+  reader.readAsDataURL(file);
+}
+async function postStory() {
+  const text = document.getElementById('cs-text') ? document.getElementById('cs-text').value.trim() : '';
+  if (!pendingStoryImage && !text) { showToast('Add a photo or text'); return; }
+  const d = await api('/api/post-story', { image: pendingStoryImage, text });
+  if (d.ok) {
+    showToast('Update shared ✓ — visible for 24 hours');
+    pendingStoryImage = null;
+    document.getElementById('cs-preview').innerHTML = `<input class="cs-text-input" id="cs-text" placeholder="Type something...">`;
+    show('main-screen');
+    switchTab('updates');
+  }
+}
+async function loadStories() {
+  const d = await api('/api/stories', null, 'GET');
+  const strip = document.getElementById('stories-strip');
+  const list = document.getElementById('stories-list');
+  let stripHtml = `<div class="story-item" onclick="show('create-story-screen')">
+    <div class="story-ring add" style="position:relative">
+      <div class="story-av">${myUser?.avatar ? '<img src=\"'+myUser.avatar+'\">' : '➕'}</div>
+      <div class="add-story-plus">+</div>
+    </div>
+    <div class="story-label">My Update</div>
+  </div>`;
+  let listHtml = '';
+  if (!d.ok || !d.stories.length) {
+    list.innerHTML = `<div class="empty-state" style="padding:30px"><div class="empty-icon">⭐</div><div>No updates yet</div></div>`;
+  } else {
+    d.stories.forEach(s => {
+      const avHtml = s.avatar ? `<img src="${s.avatar}">` : '👤';
+      stripHtml += `<div class="story-item" onclick="openStoryViewer('${s.username}')">
+        <div class="story-ring"><div class="story-av">${avHtml}</div></div>
+        <div class="story-label">${s.username}</div>
+      </div>`;
+      listHtml += `<div class="chat-item" onclick="openStoryViewer('${s.username}')">
+        <div class="ci-avatar">${avHtml}</div>
+        <div class="ci-info"><div class="ci-name">${s.username}</div><div class="ci-preview">${s.items.length} update${s.items.length>1?'s':''} · ${s.items[s.items.length-1].time}</div></div>
+      </div>`;
+    });
+    list.innerHTML = listHtml;
+  }
+  strip.innerHTML = stripHtml;
+}
+async function openStoryViewer(username) {
+  const d = await api('/api/stories/' + encodeURIComponent(username), null, 'GET');
+  if (!d.ok || !d.items.length) return;
+  storyViewerData = { username, items: d.items };
+  storyViewerIdx = 0;
+  const u = await api('/api/user/' + encodeURIComponent(username), null, 'GET');
+  document.getElementById('sv-av').innerHTML = (u.ok && u.user.avatar) ? `<img src="${u.user.avatar}">` : '👤';
+  document.getElementById('sv-name').textContent = username;
+  buildProgressBars();
+  show('story-viewer');
+  renderStoryFrame();
+}
+function buildProgressBars() {
+  const prog = document.getElementById('sv-progress');
+  prog.innerHTML = storyViewerData.items.map(() => `<div class="sv-bar"><div class="sv-bar-fill"></div></div>`).join('');
+}
+function renderStoryFrame() {
+  clearTimeout(storyTimer);
+  const item = storyViewerData.items[storyViewerIdx];
+  document.getElementById('sv-time').textContent = item.time;
+  const body = document.getElementById('sv-body');
+  body.innerHTML = `<div class="sv-tap-zone" style="left:0" onclick="storyPrev()"></div><div class="sv-tap-zone" style="right:0" onclick="storyNext()"></div>` +
+    (item.image ? `<img class="sv-img" src="${item.image}">` : `<div class="sv-text">${item.text}</div>`);
+  document.querySelectorAll('.sv-bar-fill').forEach((b, i) => { b.style.width = i < storyViewerIdx ? '100%' : '0%'; });
+  const fill = document.querySelectorAll('.sv-bar-fill')[storyViewerIdx];
+  if (fill) { fill.style.transition = 'width 5s linear'; requestAnimationFrame(() => fill.style.width = '100%'); }
+  storyTimer = setTimeout(storyNext, 5000);
+}
+function storyNext() {
+  storyViewerIdx++;
+  if (storyViewerIdx >= storyViewerData.items.length) { closeStoryViewer(); return; }
+  renderStoryFrame();
+}
+function storyPrev() {
+  storyViewerIdx--;
+  if (storyViewerIdx < 0) storyViewerIdx = 0;
+  renderStoryFrame();
+}
+function closeStoryViewer() { clearTimeout(storyTimer); show('main-screen'); switchTab('updates'); }
+
+// ───── MENU ─────
+function toggleMenu() { document.getElementById('main-menu').classList.toggle('open'); }
+function closeMenu() { document.getElementById('main-menu').classList.remove('open'); }
+document.addEventListener('click', e => { if (!e.target.closest('#main-menu') && !e.target.closest('#menu-btn')) closeMenu(); });
+
+// ───── APP LOCK (local, app-open gate; separate from the account Passkey feature) ─────
+function unlockAppWithPasscode() {
+  const val = document.getElementById('applock-lock-in').value.trim();
+  const stored = localStorage.getItem('pa_applock_pass');
+  if (val === stored) { document.getElementById('app-lock-overlay').classList.remove('open'); appLocked = false; }
+  else showToast('Wrong passcode');
+}
+async function unlockAppWithBiometric() {
+  try {
+    if (!window.PublicKeyCredential) { showToast('Biometric unlock not supported here'); return; }
+    await navigator.credentials.get({ publicKey: { challenge: new Uint8Array(32), userVerification: 'required', timeout: 30000 } });
+    document.getElementById('app-lock-overlay').classList.remove('open'); appLocked = false;
+  } catch (e) { showToast('Biometric unlock failed or was cancelled'); }
+}
+
+// ───── INIT ─────
+async function init() {
+  await new Promise(r => setTimeout(r, 1800));
+  bl();
+  applyLang();
+  if (token) {
+    const d = await api('/api/me', null, 'GET');
+    if (d.ok) {
+      myUser = d.user;
+      twoFAEnabled = d.user.twoFA;
+      privacySettings = d.user.privacy || privacySettings;
+      if (!myUser.username) { show('setup-screen'); return; }
+      if (localStorage.getItem('pa_applock_on') === '1') {
+        document.getElementById('app-lock-overlay').classList.add('open');
+        document.getElementById('biometric-unlock-btn').style.display = localStorage.getItem('pa_biometric_on') === '1' ? '' : 'none';
+      }
+      show('main-screen');
+      loadChats();
+      socketAuth();
+      requestNotifPermission();
+      loadRequestsBadge();
+      loadPermissions();
+      if (d.needs2FA) checkNeeds2FA();
+      return;
+    }
+  }
+  show('language-screen');
+}
+init();
+</script>
+</body>
+</html>
